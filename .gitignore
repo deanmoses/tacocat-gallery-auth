@@ -1,1 +1,4 @@
 node_modules
+
+# SAM default build folder
+.aws-sam/
