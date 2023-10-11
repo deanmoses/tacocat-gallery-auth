@@ -12,6 +12,26 @@ Description: >-
 Transform:
 - AWS::Serverless-2016-10-31
 
+Parameters:
+  WebAppBaseURI:
+    Type: String
+    Default: https://localhost:5173
+  CognitoUserPoolID:
+    Type: String
+    Default: us-east-1_DdPFtamLz
+  CognitoBaseURI:
+    Type: String
+    Default: https://tacocatgallerytest.auth.us-east-1.amazoncognito.com
+  CognitoClientID:
+    Type: String
+    Default: 7asah0n7edj39i2b9st1fu1olo
+  CognitoLoginCallbackURI:
+    Type: String
+    Default: /auth/login_callback
+  CognitoLogoutCallbackURI:
+    Type: String
+    Default: /
+
 Globals:
   Function:
     Runtime: nodejs18.x
@@ -48,12 +68,17 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Description: A simple example includes a HTTP get method to get authentication status
-      Handler: src/handlers/auth.authStatusHandler
+      Handler: src/handlers/status.authStatusHandler
       Layers:
         - !Ref LayerCommons
       Environment:
         Variables:
-          COGNITO_CLIENT_SECRET: 
+          WebAppBaseURI: !Ref WebAppBaseURI
+          CognitoUserPoolID: !Ref CognitoUserPoolID
+          CognitoBaseURI: !Ref CognitoBaseURI
+          CognitoClientID: !Ref CognitoClientID
+          CognitoLoginCallbackURI: !Ref CognitoLoginCallbackURI
+          CognitoLogoutCallbackURI: !Ref CognitoLogoutCallbackURI
       Events:
         Api:
           Type: Api
