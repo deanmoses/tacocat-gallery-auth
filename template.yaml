@@ -16,6 +16,11 @@ Parameters:
   WebAppBaseURI:
     Type: String
     Default: https://localhost:5173
+    Description: Root URL of the Tacocat web app, like https://pix.tacocat.com
+  AuthAppDomain:
+    Type: String
+    Default: auth.pix.tacocat.com
+    Description: Domain of this authentication app.  Must be a subdomain of WebAppBaseURI
   CognitoUserPoolID:
     Type: String
     Default: us-east-1_DdPFtamLz
@@ -28,9 +33,11 @@ Parameters:
   CognitoLoginCallbackURI:
     Type: String
     Default: /auth/login_callback
+    Description: URI where Congnito sends users to after login.  This has to process the cookies.
   CognitoLogoutCallbackURI:
     Type: String
     Default: /
+    Description: Path within the Tacocat web app to send users after Cognito logs them out.  Relative to WebAppBaseURI
 
 Globals:
   Function:
@@ -41,13 +48,14 @@ Globals:
     Timeout: 100
   Api:
     Domain:
-      DomainName: auth.pix.tacocat.com
+      DomainName: !Ref AuthAppDomain
       CertificateArn: arn:aws:acm:us-east-1:010410881828:certificate/7ec6fa1d-6181-4b69-8ee0-df7e1f15a537
 
 # Resources declares the AWS resources that you want to include in the stack
 # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html
 Resources:
 
+  # A Lambda Layer is where you include TypeScript library modules that Lambda functions can call
   LayerCommons:
     Type: AWS::Serverless::LayerVersion
     Properties:
@@ -59,20 +67,17 @@ Resources:
       BuildMethod: makefile
 
 
-  # Each Lambda function is defined by properties:
-  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
-
-
-  # This is a Lambda function config associated with the source code: auth.js
-  authFunction:
+  # Lambda function + API Gateway API for retrieving authentication status
+  AuthStatusFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Description: A simple example includes a HTTP get method to get authentication status
-      Handler: src/handlers/status.authStatusHandler
+      Description: HTTP GET method to get authentication status
+      Handler: src/handlers/authStatus.handler
       Layers:
         - !Ref LayerCommons
       Environment:
         Variables:
+          AuthAppDomain: !Ref AuthAppDomain
           WebAppBaseURI: !Ref WebAppBaseURI
           CognitoUserPoolID: !Ref CognitoUserPoolID
           CognitoBaseURI: !Ref CognitoBaseURI
@@ -90,85 +95,34 @@ Resources:
         External:
           commons
 
-  # This is a Lambda function config associated with the source code: get-all-items.js
-  getAllItemsFunction:
+  # Lambda function + API Gateway API for redirecting to the AWS Cognito login page
+  RedirectToCognitoFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/get-all-items.getAllItemsHandler
-      Description: A simple example includes a HTTP get method to get all items from a DynamoDB table.
-      Policies:
-        # Give Create/Read/Update/Delete Permissions to the SampleTable
-        - DynamoDBCrudPolicy:
-            TableName: !Ref SampleTable
+      Description: HTTP GET method for redirecting to the AWS Cognito login page
+      Handler: src/handlers/redirectToCognito.handler
+      Layers:
+        - !Ref LayerCommons
       Environment:
         Variables:
-          # Make table name accessible as environment variable from function code during execution
-          SAMPLE_TABLE: !Ref SampleTable
+          AuthAppDomain: !Ref AuthAppDomain
+          WebAppBaseURI: !Ref WebAppBaseURI
+          CognitoUserPoolID: !Ref CognitoUserPoolID
+          CognitoBaseURI: !Ref CognitoBaseURI
+          CognitoClientID: !Ref CognitoClientID
+          CognitoLoginCallbackURI: !Ref CognitoLoginCallbackURI
+          CognitoLogoutCallbackURI: !Ref CognitoLogoutCallbackURI
       Events:
         Api:
           Type: Api
           Properties:
-            Path: /db
+            Path: /login
             Method: GET
-  # Each Lambda function is defined by properties:
-  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Metadata:
+      BuildProperties:
+        External:
+          commons
 
-  # This is a Lambda function config associated with the source code: get-by-id.js
-  getByIdFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: src/handlers/get-by-id.getByIdHandler
-      Description: A simple example includes a HTTP get method to get one item by id from a DynamoDB table.
-      Policies:
-        # Give Create/Read/Update/Delete Permissions to the SampleTable
-        - DynamoDBCrudPolicy:
-            TableName: !Ref SampleTable
-      Environment:
-        Variables:
-          # Make table name accessible as environment variable from function code during execution
-          SAMPLE_TABLE: !Ref SampleTable
-      Events:
-        Api:
-          Type: Api
-          Properties:
-            Path: /{id}
-            Method: GET
-  # Each Lambda function is defined by properties:
-  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
-
-  # This is a Lambda function config associated with the source code: put-item.js
-  putItemFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: src/handlers/put-item.putItemHandler
-      Description: A simple example includes a HTTP post method to add one item to a DynamoDB table.
-      Policies:
-        # Give Create/Read/Update/Delete Permissions to the SampleTable
-        - DynamoDBCrudPolicy:
-            TableName: !Ref SampleTable
-      Environment:
-        Variables:
-          # Make table name accessible as environment variable from function code during execution
-          SAMPLE_TABLE: !Ref SampleTable
-      Events:
-        Api:
-          Type: Api
-          Properties:
-            Path: /iii
-            Method: POST
-  # Simple syntax to create a DynamoDB table with a single attribute primary key, more in
-  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlesssimpletable
-
-  # DynamoDB table to store item: {id: &lt;ID&gt;, name: &lt;NAME&gt;}
-  SampleTable:
-    Type: AWS::Serverless::SimpleTable
-    Properties:
-      PrimaryKey:
-        Name: id
-        Type: String
-      ProvisionedThroughput:
-        ReadCapacityUnits: 2
-        WriteCapacityUnits: 2
 
 Outputs:
   WebEndpoint:

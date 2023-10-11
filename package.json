@@ -5,7 +5,8 @@
     "private": true,
     "dependencies": {
         "@aws-sdk/client-dynamodb": "^3.188.0",
-        "@aws-sdk/lib-dynamodb": "^3.188.0"
+        "@aws-sdk/lib-dynamodb": "^3.188.0",
+        "aws-jwt-verify": "^4.0.0"
     },
     "devDependencies": {
         "@types/aws-lambda": "^8.10.124",

@@ -1,9 +1,25 @@
 import {
+	AUTH_APP_DOMAIN,
+	WEB_APP_BASE_URI,
 	COGNITO_CLIENT_ID,
 	COGNITO_BASE_URI,
 	COGNITO_LOGIN_CALLBACK_URI,
 	COGNITO_LOGOUT_CALLBACK_URI
 } from './cognitoConstants';
+
+/**
+ * Root URL of the authentication web app, like https://auth.pix.tacocat.com
+ */
+export function getAuthAppBaseUrl(): string {
+	return new URL('https://' + AUTH_APP_DOMAIN).toString();
+}
+
+/**
+ * Root URL of the Tacocat web app, like https://pix.tacocat.com
+ */
+export function getWebAppBaseUrl(): string {
+	return new URL(WEB_APP_BASE_URI).toString();
+}
 
 /**
  * URL of the Cognito-hosted login page
@@ -19,11 +35,14 @@ export function getLoginUrl(): string {
 }
 
 /**
- * URL to which Cognito is to return the user after they sign in via the Cognito-hosted login page.
- * Must be identical to an Allowed Callback URL configured in Cognito, inlucluding trailing slash.
+ * URL on the Tacocat web app to which Cognito is to return the user after 
+ * they sign in via the Cognito-hosted login page.
+ * 
+ * Must be identical to an Allowed Callback URL configured in Cognito, 
+ * inlucluding trailing slash.
  */
 export function getLoginCallbackUrl(): string {
-	return new URL(COGNITO_LOGIN_CALLBACK_URI).toString();
+	return new URL(COGNITO_LOGIN_CALLBACK_URI, getAuthAppBaseUrl()).toString();
 }
 
 /**
@@ -38,9 +57,12 @@ export function getLogoutUrl(): string {
 }
 
 /**
- * URL to which Cognito is to return the user after they logout via the Cognito-hosted functionality.
- * Must be identical to an Allowed sign-out URL configured in Cognito, inlucluding trailing slash.
+ * URL to which Cognito is to return the user after they logout 
+ * via the Cognito-hosted functionality.
+ * 
+ * Must be identical to an Allowed sign-out URL configured in Cognito, 
+ * inlucluding trailing slash.
  */
 export function getLogoutCallbackUrl(): string {
-	return new URL(COGNITO_LOGOUT_CALLBACK_URI).toString();
+	return new URL(COGNITO_LOGOUT_CALLBACK_URI, getWebAppBaseUrl()).toString();
 }
