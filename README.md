@@ -1,2 +1,4 @@
-# sam-app-test1
- AWS SAM Pipelines Test 1
+# tacocat-gallery-auth
+ Authentication app for Tacocat Gallery
+ 
+ Uses AWS SAM
