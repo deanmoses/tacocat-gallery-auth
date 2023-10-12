@@ -9,6 +9,7 @@
  */
 
 import { CognitoJwtVerifier } from 'aws-jwt-verify';
+import { getCookie } from 'commons/cookies.js';
 import { getTokensFromCognito } from 'commons/authTokens.js';
 import { COGNITO_POOL_ID, COGNITO_CLIENT_ID } from 'commons/cognitoConstants.js';
 
@@ -23,14 +24,14 @@ export const handler = async (event) => {
     console.log('Event: ', event);
 
     // Get the short-lived Cognito user ID token from cookie
-    const rawIdToken = event.cookies?.id_token;
+    const rawIdToken = getCookie(event.headers.cookie, 'id_token');
     console.log('Raw ID token cookie: ', rawIdToken);
 
     // Get the Cognito refresh token from cookie
-    const refreshToken = event.cookies?.refresh_token;
+    const refreshToken = getCookie(event.headers.cookie, 'refresh_token');
     console.log('Refresh token cookie: ', refreshToken);
 
-    const otherCookie = event.cookies?.now;
+    const otherCookie = getCookie(event.headers.cookie, 'other');
     console.log('Other cookie: ', otherCookie);
 
     const info = {
@@ -38,14 +39,14 @@ export const handler = async (event) => {
         idToken: rawIdToken,
         refreshToken: refreshToken,
         otherCookie: otherCookie,
+        cookies: event.headers.cookie,
         event
     }
 
     const response = {
         statusCode: 200,
-        headers: {
-            'Set-Cookie': 'now=doozit; HttpOnly; SameSite=Strict',
-            'Set-Cookie': 'id_token=I just made this up; HttpOnly; SameSite=Strict',
+        multiValueHeaders: {
+            'Set-Cookie': ['other=doozit; HttpOnly; SameSite=Strict', 'id_token=I just made this up; HttpOnly; SameSite=Strict', 'yetOneMore=0U812; HttpOnly; SameSite=Strict']
         },
         body: JSON.stringify(info)
     };
