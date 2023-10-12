@@ -3,11 +3,11 @@
         {
             "type": "aws-sam",
             "request": "direct-invoke",
-            "name": "sam-app-test1:authFunction",
+            "name": "tacocat-gallery-auth:AuthStatusFunction",
             "invokeTarget": {
                 "target": "template",
                 "templatePath": "${workspaceFolder}/template.yaml",
-                "logicalId": "authFunction"
+                "logicalId": "AuthStatusFunction"
             },
             "lambda": {
                 "payload": {},

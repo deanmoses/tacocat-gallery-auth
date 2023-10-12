@@ -13,7 +13,7 @@ env:
   PIPELINE_USER_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   PIPELINE_USER_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   SAM_TEMPLATE: template.yaml
-  TESTING_STACK_NAME: sam-app-test1-dev
+  TESTING_STACK_NAME: tacocat-gallery-auth-dev
   TESTING_PIPELINE_EXECUTION_ROLE: arn:aws:iam::010410881828:role/aws-sam-cli-managed-prod-pip-PipelineExecutionRole-CAJN7551Q7ZE
   TESTING_CLOUDFORMATION_EXECUTION_ROLE: arn:aws:iam::010410881828:role/aws-sam-cli-managed-prod-CloudFormationExecutionR-1QCX12V4N3RAP
   TESTING_ARTIFACTS_BUCKET: aws-sam-cli-managed-prod-pipeline-artifactsbucket-kpx24g7n4eql
@@ -22,7 +22,7 @@ env:
   # testing "sam package" and "sam deploy" commands.
   # TESTING_IMAGE_REPOSITORY = '0123456789.dkr.ecr.region.amazonaws.com/repository-name'
   TESTING_REGION: us-east-1
-  PROD_STACK_NAME: sam-app-test1-prod
+  PROD_STACK_NAME: tacocat-gallery-auth-prod
   PROD_PIPELINE_EXECUTION_ROLE: arn:aws:iam::010410881828:role/aws-sam-cli-managed-dev-pipe-PipelineExecutionRole-BG895452FHTI
   PROD_CLOUDFORMATION_EXECUTION_ROLE: arn:aws:iam::010410881828:role/aws-sam-cli-managed-dev-p-CloudFormationExecutionR-XW0CUMHU9WW4
   PROD_ARTIFACTS_BUCKET: aws-sam-cli-managed-dev-pipeline-artifactsbucket-1lv0gkwm4pten
