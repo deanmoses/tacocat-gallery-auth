@@ -1,13 +1,8 @@
-# This is the SAM template that represents the architecture of your serverless application
-# https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-template-basics.html
+# This file defines the AWS resources of the SAM serverless application
+# It gets transfomed into a CloudFormation template to be deployed
 
-# The AWSTemplateFormatVersion identifies the capabilities of the template
-# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/format-version-structure.html
 AWSTemplateFormatVersion: 2010-09-09
 Description: Tacocat Gallery authentication API
-
-# Transform section specifies one or more macros that AWS CloudFormation uses to process your template
-# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/transform-section-structure.html
 Transform:
 - AWS::Serverless-2016-10-31
 
@@ -38,23 +33,24 @@ Parameters:
     Default: /
     Description: Path within the Tacocat web app to send users after Cognito logs them out.  Relative to WebAppBaseURI
 
+# Globals are shared cofiguration that apply to multiple Resources
 Globals:
+  Api:
+    Name: Tacocat Gallery Authentication API
+    Domain:
+      DomainName: !Ref AuthAppDomain
+      CertificateArn: arn:aws:acm:us-east-1:010410881828:certificate/7ec6fa1d-6181-4b69-8ee0-df7e1f15a537
   Function:
     Runtime: nodejs18.x
     Architectures:
       - x86_64
     MemorySize: 128
     Timeout: 100
-  Api:
-    Domain:
-      DomainName: !Ref AuthAppDomain
-      CertificateArn: arn:aws:acm:us-east-1:010410881828:certificate/7ec6fa1d-6181-4b69-8ee0-df7e1f15a537
 
-# Resources declares the AWS resources that you want to include in the stack
-# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html
+# Resources are the AWS resources in the stack
 Resources:
 
-  # A Lambda Layer is where you include TypeScript library modules that Lambda functions can call
+  # A Lambda Layer of the TypeScript library modules that Lambda functions will call
   LayerCommons:
     Type: AWS::Serverless::LayerVersion
     Properties:
@@ -66,7 +62,7 @@ Resources:
       BuildMethod: makefile
 
 
-  # Lambda function + API Gateway API for retrieving authentication status
+  # Lambda for retrieving authentication status
   AuthStatusFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -94,7 +90,7 @@ Resources:
         External:
           commons
 
-  # Lambda function + API Gateway API for redirecting to the AWS Cognito login page
+  # Lambda for redirecting to the AWS Cognito login page
   RedirectToCognitoFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -121,7 +117,6 @@ Resources:
       BuildProperties:
         External:
           commons
-
 
 Outputs:
   WebEndpoint:
