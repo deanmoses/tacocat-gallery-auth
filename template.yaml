@@ -26,8 +26,8 @@ Parameters:
     Default: 7asah0n7edj39i2b9st1fu1olo
   CognitoLoginCallbackURI:
     Type: String
-    Default: /auth/login_callback
-    Description: URI where Congnito sends users to after login.  This has to process the cookies.
+    Default: /login_callback
+    Description: Path within AuthAppDomain where Congnito sends users to after login.  This has to process the cookies.
   CognitoLogoutCallbackURI:
     Type: String
     Default: /
@@ -112,6 +112,34 @@ Resources:
           Type: Api
           Properties:
             Path: /login
+            Method: GET
+    Metadata:
+      BuildProperties:
+        External:
+          commons
+
+  # Lambda for handling the login callback from the AWS Cognito login page
+  LoginCallbackFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Handles the login callback from the AWS Cognito login page
+      Handler: src/handlers/loginCallback.handler
+      Layers:
+        - !Ref LayerCommons
+      Environment:
+        Variables:
+          AuthAppDomain: !Ref AuthAppDomain
+          WebAppBaseURI: !Ref WebAppBaseURI
+          CognitoUserPoolID: !Ref CognitoUserPoolID
+          CognitoBaseURI: !Ref CognitoBaseURI
+          CognitoClientID: !Ref CognitoClientID
+          CognitoLoginCallbackURI: !Ref CognitoLoginCallbackURI
+          CognitoLogoutCallbackURI: !Ref CognitoLogoutCallbackURI
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /login_callback
             Method: GET
     Metadata:
       BuildProperties:
