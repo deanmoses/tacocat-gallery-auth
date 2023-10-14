@@ -10,19 +10,53 @@
             "remoteRoot": "/var/task",
             "protocol": "inspector",
             "stopOnEntry": false
-          },
+        },
         {
             "type": "aws-sam",
             "request": "direct-invoke",
-            "name": "tacocat-gallery-auth:AuthStatusFunction",
+            "name": "Run AuthStatusFunction Lambda Without Cookies",
             "invokeTarget": {
                 "target": "template",
                 "templatePath": "${workspaceFolder}/template.yaml",
                 "logicalId": "AuthStatusFunction"
             },
             "lambda": {
-                "payload": {},
+                "runtime": "nodejs18.x",
+                "payload": {
+                    "path": "${workspaceFolder}/events/auth-status-event-no-cookies.json"
+                },
                 "environmentVariables": {}
+            }
+        },
+        {
+            "type": "aws-sam",
+            "request": "direct-invoke",
+            "name": "Run AuthStatusFunction Lambda With Cookies",
+            "invokeTarget": {
+                "target": "template",
+                "templatePath": "${workspaceFolder}/template.yaml",
+                "logicalId": "AuthStatusFunction"
+            },
+            "lambda": {
+                "runtime": "nodejs18.x",
+                "payload": {
+                    "path": "${workspaceFolder}/events/auth-status-event-multiple-cookies.json"
+                },
+                "environmentVariables": {}
+            }
+        },
+        {
+            "type": "aws-sam",
+            "request": "direct-invoke",
+            "name": "Run AuthStatusFunction via API",
+            "invokeTarget": {
+                "target": "api",
+                "templatePath": "${workspaceFolder}/template.yaml",
+                "logicalId": "AuthStatusFunction"
+            },
+            "api": {
+                "path": "/",
+                "httpMethod": "get"
             }
         }
     ]

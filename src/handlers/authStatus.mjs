@@ -23,15 +23,17 @@ export const handler = async (event) => {
 
     console.log('Event: ', event);
 
+    const cookies = event.headers?.cookie;
+
     // Get the short-lived Cognito user ID token from cookie
-    const rawIdToken = getCookie(event.headers.cookie, 'id_token');
+    const rawIdToken = getCookie(cookies, 'id_token');
     console.log('Raw ID token cookie: ', rawIdToken);
 
     // Get the Cognito refresh token from cookie
-    const refreshToken = getCookie(event.headers.cookie, 'refresh_token');
+    const refreshToken = getCookie(cookies, 'refresh_token');
     console.log('Refresh token cookie: ', refreshToken);
 
-    const otherCookie = getCookie(event.headers.cookie, 'other');
+    const otherCookie = getCookie(cookies, 'other');
     console.log('Other cookie: ', otherCookie);
 
     const info = {
@@ -39,7 +41,7 @@ export const handler = async (event) => {
         idToken: rawIdToken,
         refreshToken: refreshToken,
         otherCookie: otherCookie,
-        cookies: event.headers.cookie,
+        cookies,
         event
     }
 

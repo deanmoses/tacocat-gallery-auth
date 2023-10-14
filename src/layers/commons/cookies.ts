@@ -6,7 +6,7 @@
  * @returns cookie value or null if not found
  */
 export function getCookie(cookieHeader: string, name: string): string|null {
-    if (!!cookieHeader) return null;
+    if (!cookieHeader) return null;
 	const nameLenPlus = (name.length + 1);
 	return cookieHeader
 		.split(';')
