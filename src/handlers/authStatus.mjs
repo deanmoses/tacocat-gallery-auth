@@ -56,7 +56,7 @@ export const handler = async (event) => {
 				idExpires.setSeconds(idExpires.getSeconds() + updatedTokens.expires_in);
                 response.multiValueHeaders = {
                     'Set-Cookie': [
-                        `id_token=${updatedTokens.id_token}; HttpOnly; SameSite=Strict; Path=/; Expires=${idExpires}`
+                        `id_token=${updatedTokens.id_token}; HttpOnly; Domain=tacocat.com; SameSite=Strict; Path=/; Expires=${idExpires}`
                     ]
                 }
 

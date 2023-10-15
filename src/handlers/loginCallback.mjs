@@ -50,8 +50,8 @@ export const handler = async (event) => {
         // Create the cookie headers
         const multiValueHeaders = {
             'Set-Cookie': [
-                `id_token=${tokens.id_token}; HttpOnly; SameSite=Strict; Path=/; Expires=${idExpires}`,
-                `refresh_token=${tokens.refresh_token}; HttpOnly; SameSite=Strict; Path=/; Expires=${refreshExpire}`,
+                `id_token=${tokens.id_token}; HttpOnly; Domain=tacocat.com; SameSite=Strict; Path=/; Expires=${idExpires}`,
+                `refresh_token=${tokens.refresh_token}; HttpOnly; Domain=tacocat.com; SameSite=Strict; Path=/; Expires=${refreshExpire}`,
                 // Set another cookie that simply tells the front end we are dealing with
                 // a user that MIGHT be authenticatable.  This is an optimization:
                 // Cookies with secure info (like a session ID) should be set as 
@@ -61,7 +61,7 @@ export const handler = async (event) => {
                 // and only call the authentication back end if there's an actual chance
                 // the user might be authenticated, I neeed to set another cookie with
                 // no sensitive information.
-                `was_authenticated=${"Authenticated at " + Date.now()}; SameSite=Strict; Path=/; Expires=${idExpires}`
+                `was_authenticated=${"Authenticated at " + Date.now()}; Domain=tacocat.com; SameSite=Strict; Path=/; Expires=${idExpires}`
             ]
         }
 
