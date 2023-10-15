@@ -144,7 +144,34 @@ Resources:
         External:
           commons
 
+  LogoutFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Log the user out
+      Handler: src/handlers/logout.handler
+      Layers:
+        - !Ref LayerCommons
+      Environment:
+        Variables:
+          AuthAppDomain: !Ref AuthAppDomain
+          GalleryAppBaseURI: !Ref GalleryAppBaseURI
+          CognitoUserPoolID: !Ref CognitoUserPoolID
+          CognitoBaseURI: !Ref CognitoBaseURI
+          CognitoClientID: !Ref CognitoClientID
+          CognitoLogoutCallbackURI: !Ref CognitoLogoutCallbackURI
+          CognitoClientSecret: "{{resolve:secretsmanager:Tacocat/Gallery/Authentication:SecretString:TacocatGalleryCognitoClientSecret}}"
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /logout
+            Method: GET
+    Metadata:
+      BuildProperties:
+        External:
+          commons
+
 Outputs:
   WebEndpoint:
-    Description: "API Gateway endpoint URL for Prod stage"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/"
