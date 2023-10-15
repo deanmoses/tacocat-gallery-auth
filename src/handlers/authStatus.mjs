@@ -17,8 +17,6 @@ import { COGNITO_POOL_ID, COGNITO_CLIENT_ID } from 'commons/env.js';
  * The function called when the Lambda is invoked
  */
 export const handler = async (event) => {
-    console.info(event);
-
     if (event.httpMethod !== 'GET') {
         throw new Error(`I only accept GET method, but instead I got: ${event.httpMethod}`);
     }
