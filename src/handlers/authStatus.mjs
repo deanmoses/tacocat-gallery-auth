@@ -25,6 +25,8 @@ export const handler = async (event) => {
 
 	// The HTTP response we'll be building
     let response = {};
+
+	// The user we'll be returning
     let user;
 
     // Get the cookie header from the API Gateway event
@@ -71,14 +73,15 @@ export const handler = async (event) => {
 	}
 
     const body = {
-        email: "9mo@mo.com",
-        idToken: rawIdToken,
-        user,
-        cookies,
-        event
+        user
     }
 
     response.statusCode = 200;
+	response.headers = {
+		pragma: 'no-cache',
+		expires: 0
+	};
+	response.headers['cache-control'] = 'no-cache, no-store, must-revalidate';
     response.body = JSON.stringify(body)
 
     // All log statements are written to CloudWatch
