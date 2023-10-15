@@ -1,6 +1,6 @@
 {
     "name": "tacocat-gallery-auth",
-    "description": "Tacocat Gallery auth app",
+    "description": "Tacocat Gallery authentication API app using AWS API Gateway and Lambdas to talk with AWS Cognito",
     "version": "0.0.1",
     "private": true,
     "dependencies": {

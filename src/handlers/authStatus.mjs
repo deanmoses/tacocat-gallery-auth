@@ -23,6 +23,7 @@ export const handler = async (event) => {
         throw new Error(`I only accept GET method, but instead I got: ${event.httpMethod}`);
     }
 
+	// The HTTP response we'll be building
     let response = {};
     let user;
 
