@@ -1,11 +1,11 @@
 import {
 	AUTH_APP_DOMAIN,
-	WEB_APP_BASE_URI,
+	GALLERY_APP_BASE_URI,
 	COGNITO_CLIENT_ID,
 	COGNITO_BASE_URI,
 	COGNITO_LOGIN_CALLBACK_URI,
 	COGNITO_LOGOUT_CALLBACK_URI
-} from './cognitoConstants';
+} from './env';
 
 /**
  * Root URL of the authentication web app, like https://auth.pix.tacocat.com
@@ -15,10 +15,10 @@ export function getAuthAppBaseUrl(): string {
 }
 
 /**
- * Root URL of the Tacocat web app, like https://pix.tacocat.com
+ * Root URL of the Tacocat photo gallery web app, like https://pix.tacocat.com
  */
-export function getWebAppBaseUrl(): string {
-	return new URL(WEB_APP_BASE_URI).toString();
+export function getGalleryAppBaseUrl(): string {
+	return new URL(GALLERY_APP_BASE_URI).toString();
 }
 
 /**
@@ -64,5 +64,5 @@ export function getLogoutUrl(): string {
  * inlucluding trailing slash.
  */
 export function getLogoutCallbackUrl(): string {
-	return new URL(COGNITO_LOGOUT_CALLBACK_URI, getWebAppBaseUrl()).toString();
+	return new URL(COGNITO_LOGOUT_CALLBACK_URI, getGalleryAppBaseUrl()).toString();
 }

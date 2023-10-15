@@ -7,31 +7,29 @@ Transform:
 - AWS::Serverless-2016-10-31
 
 Parameters:
-  WebAppBaseURI:
+  GalleryAppBaseURI:
     Type: String
-    Default: https://localhost:5173
-    Description: Root URL of the Tacocat web app, like https://pix.tacocat.com
+    Default: https://pix.tacocat.com
+    Description: Root URL of the Tacocat photo gallery web app, like https://pix.tacocat.com
   AuthAppDomain:
     Type: String
     Default: auth.pix.tacocat.com
-    Description: Domain of this authentication app.  Must be a subdomain of WebAppBaseURI
+    Description: Domain of this authentication app.  Must be a subdomain of GalleryAppBaseURI for the cookies to work.
   CognitoUserPoolID:
     Type: String
     Default: us-east-1_DdPFtamLz
   CognitoBaseURI:
     Type: String
     Default: https://tacocatgallerytest.auth.us-east-1.amazoncognito.com
+    Description: Root URL of the user pool.  It's found in AWS Cognito under the user pool > App Integration > Configuration
   CognitoClientID:
     Type: String
     Default: 7asah0n7edj39i2b9st1fu1olo
-  CognitoLoginCallbackURI:
-    Type: String
-    Default: /login_callback
-    Description: Path within AuthAppDomain where Congnito sends users to after login.  This has to process the cookies.
+    Description: ID of the app client created in AWS Cognito.  It's found in AWS Cognito under App client information > Client ID
   CognitoLogoutCallbackURI:
     Type: String
     Default: /
-    Description: Path within the Tacocat web app to send users after Cognito logs them out.  Relative to WebAppBaseURI
+    Description: Path within the gallery web app (GalleryAppBaseURI) to send users after Cognito logs them out.
 
 # Globals are shared cofiguration that apply to multiple Resources
 Globals:
@@ -73,12 +71,12 @@ Resources:
       Environment:
         Variables:
           AuthAppDomain: !Ref AuthAppDomain
-          WebAppBaseURI: !Ref WebAppBaseURI
+          GalleryAppBaseURI: !Ref GalleryAppBaseURI
           CognitoUserPoolID: !Ref CognitoUserPoolID
           CognitoBaseURI: !Ref CognitoBaseURI
           CognitoClientID: !Ref CognitoClientID
-          CognitoLoginCallbackURI: !Ref CognitoLoginCallbackURI
           CognitoLogoutCallbackURI: !Ref CognitoLogoutCallbackURI
+          CognitoClientSecret: "{{resolve:secretsmanager:Tacocat/Gallery/Authentication:SecretString:TacocatGalleryCognitoClientSecret}}"
       Events:
         Api:
           Type: Api
@@ -101,12 +99,12 @@ Resources:
       Environment:
         Variables:
           AuthAppDomain: !Ref AuthAppDomain
-          WebAppBaseURI: !Ref WebAppBaseURI
+          GalleryAppBaseURI: !Ref GalleryAppBaseURI
           CognitoUserPoolID: !Ref CognitoUserPoolID
           CognitoBaseURI: !Ref CognitoBaseURI
           CognitoClientID: !Ref CognitoClientID
-          CognitoLoginCallbackURI: !Ref CognitoLoginCallbackURI
           CognitoLogoutCallbackURI: !Ref CognitoLogoutCallbackURI
+          CognitoClientSecret: "{{resolve:secretsmanager:Tacocat/Gallery/Authentication:SecretString:TacocatGalleryCognitoClientSecret}}"
       Events:
         Api:
           Type: Api
@@ -129,12 +127,12 @@ Resources:
       Environment:
         Variables:
           AuthAppDomain: !Ref AuthAppDomain
-          WebAppBaseURI: !Ref WebAppBaseURI
+          GalleryAppBaseURI: !Ref GalleryAppBaseURI
           CognitoUserPoolID: !Ref CognitoUserPoolID
           CognitoBaseURI: !Ref CognitoBaseURI
           CognitoClientID: !Ref CognitoClientID
-          CognitoLoginCallbackURI: !Ref CognitoLoginCallbackURI
           CognitoLogoutCallbackURI: !Ref CognitoLogoutCallbackURI
+          CognitoClientSecret: "{{resolve:secretsmanager:Tacocat/Gallery/Authentication:SecretString:TacocatGalleryCognitoClientSecret}}"
       Events:
         Api:
           Type: Api

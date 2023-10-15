@@ -11,7 +11,7 @@
 import { CognitoJwtVerifier } from 'aws-jwt-verify';
 import { getCookie } from 'commons/cookies.js';
 import { getTokensFromCognito } from 'commons/authTokens.js';
-import { COGNITO_POOL_ID, COGNITO_CLIENT_ID } from 'commons/cognitoConstants.js';
+import { COGNITO_POOL_ID, COGNITO_CLIENT_ID } from 'commons/env.js';
 
 /**
  * The function called when the Lambda is invoked

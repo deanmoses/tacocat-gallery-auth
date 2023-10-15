@@ -4,7 +4,7 @@
 	Adapted from https://kinderas.com/technology/23/07/21/implementing-login-and-authentication-for-sveltekit-using-aws-cognito
 */
 
-import { COGNITO_BASE_URI, COGNITO_CLIENT_ID, COGNITO_CLIENT_SECRET } from './cognitoConstants';
+import { COGNITO_BASE_URI, COGNITO_CLIENT_ID, COGNITO_CLIENT_SECRET } from './env';
 import { getLoginCallbackUrl } from './authUriHelpers';
 
 interface Tokens {
@@ -51,6 +51,8 @@ export async function getTokensFromCognito(options: TokenOptions) {
 	const baseUrl = COGNITO_BASE_URI;
 	const clientId = COGNITO_CLIENT_ID;
 	const clientSecret = COGNITO_CLIENT_SECRET;
+
+	if (!clientSecret) throw Error("No Cognito Client Secret in the environment");
 
 	// The token API endpoint
 	const cognitoTokenExchangeUrl = new URL('/oauth2/token/', baseUrl);
