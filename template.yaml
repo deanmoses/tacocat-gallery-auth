@@ -5,8 +5,7 @@
 AWSTemplateFormatVersion: 2010-09-09
 
 # -----------------------------------------------------------------------------
-# This particular SAM template defines the authentication API for Tacocat's
-# photo gallery.
+# This particular template defines the authentication API for Tacocat Gallery
 # -----------------------------------------------------------------------------
 Description: Tacocat Gallery authentication API
 
@@ -17,8 +16,7 @@ Description: Tacocat Gallery authentication API
 # boilerplate around declaring resources like Lambda functions and their 
 # accompanying execution roles.
 # -----------------------------------------------------------------------------
-Transform:
-- AWS::Serverless-2016-10-31
+Transform: AWS::Serverless-2016-10-31
 
 # -----------------------------------------------------------------------------
 # Parameters that can be specified when deploying this template
