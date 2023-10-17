@@ -3,6 +3,7 @@
     "description": "Tacocat Gallery authentication API app using AWS API Gateway and Lambdas to talk with AWS Cognito",
     "version": "0.0.1",
     "private": true,
+    "license": "Apache-2.0",
     "dependencies": {
         "aws-jwt-verify": "^4.0.0"
     },
