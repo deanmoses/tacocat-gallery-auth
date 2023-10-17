@@ -1,11 +1,29 @@
-# This file defines the AWS resources of the SAM serverless application
-# It gets transfomed into a CloudFormation template to be deployed
-
+# -----------------------------------------------------------------------------
+# This is a AWS Serverless Application Model (SAM) template
+# It defines the "stack" of AWS resources needed to run the SAM app
+# -----------------------------------------------------------------------------
 AWSTemplateFormatVersion: 2010-09-09
+
+# -----------------------------------------------------------------------------
+# This particular SAM template defines the authentication API for Tacocat's
+# photo gallery.
+# -----------------------------------------------------------------------------
 Description: Tacocat Gallery authentication API
+
+# -----------------------------------------------------------------------------
+# This file is written in SAM syntax, and gets transfomed and expanded into a  
+# CloudFormation template.  The CloudFormation template is what actually gets 
+# deployed.  The main point is that SAM syntax is much simpler, with a lot less
+# boilerplate around declaring resources like Lambda functions and their 
+# accompanying execution roles.
+# -----------------------------------------------------------------------------
 Transform:
 - AWS::Serverless-2016-10-31
 
+# -----------------------------------------------------------------------------
+# Parameters that can be specified when deploying this template
+# This is the only way to define constants for use elsewhere in the template
+# -----------------------------------------------------------------------------
 Parameters:
   GalleryAppBaseURI:
     Type: String
@@ -31,7 +49,23 @@ Parameters:
     Default: /
     Description: Path within the gallery web app (GalleryAppBaseURI) to send users after Cognito logs them out.
 
-# Globals are shared cofiguration that apply to multiple Resources
+# -----------------------------------------------------------------------------
+# Output values for use after AWS creates the stack, such as to:
+#  - Import into other stacks (to create cross-stack references)
+#  - Return in response (to describe stack calls)
+#  - View on the AWS CloudFormation console
+# For example, you can output a S3 bucket name for a stack to make the bucket
+# easier to find.
+# -----------------------------------------------------------------------------
+Outputs:
+  WebEndpoint:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/"
+
+
+# ------------------------------------------------------------------------------
+# Configuration inheritable by all Lambda functions and other types of Resources
+# ------------------------------------------------------------------------------
 Globals:
   Api:
     Name: Tacocat Gallery Authentication API
@@ -45,10 +79,15 @@ Globals:
     MemorySize: 128
     Timeout: 100
 
-# Resources are the AWS resources in the stack
+# -----------------------------------------------------------------------------
+# Resources are the actual AWS systems that will be provisioned
+# -----------------------------------------------------------------------------
 Resources:
 
-  # A Lambda Layer of the TypeScript library modules that Lambda functions will call
+  # -----------------------------------------------------------------------------
+  # A Layer is a set of files that gets zipped up and included with a Lambda
+  # This contains the TypeScript library modules that Lambda functions will call
+  # -----------------------------------------------------------------------------
   LayerCommons:
     Type: AWS::Serverless::LayerVersion
     Properties:
@@ -144,6 +183,7 @@ Resources:
         External:
           commons
 
+  # Lambda for logging the user out
   LogoutFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -170,8 +210,3 @@ Resources:
       BuildProperties:
         External:
           commons
-
-Outputs:
-  WebEndpoint:
-    Description: "API Gateway endpoint URL"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/"
