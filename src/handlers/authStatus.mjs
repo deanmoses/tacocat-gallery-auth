@@ -76,10 +76,15 @@ export const handler = async (event) => {
 
     response.statusCode = 200;
 	response.headers = {
+			"Content-Type": "application/json",
+			"Access-Control-Allow-Headers" : "X-Requested-With,Content-Type",
+			"Access-Control-Allow-Origin": event.headers.origin,
+			"Access-Control-Allow-Methods": "GET, OPTIONS",
+			"Access-Control-Allow-Credentials": "true",
+			'cache-control': 'no-cache, no-store, must-revalidate',
 		pragma: 'no-cache',
-		expires: 0
+		expires: 0,
 	};
-	response.headers['cache-control'] = 'no-cache, no-store, must-revalidate';
     response.body = JSON.stringify(body)
 
     // All log statements are written to CloudWatch
@@ -101,7 +106,7 @@ async function verifyToken(token) {
 	try {
 		payload = await jwtVerifier.verify(token);
 	} catch {
-		console.log('Token not valid!');
+		console.log('Token not valid! token: ', token);
 	}
 	return payload;
 }

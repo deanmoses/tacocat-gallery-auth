@@ -70,6 +70,11 @@ Globals:
     Domain:
       DomainName: !Ref AuthAppDomain
       CertificateArn: arn:aws:acm:us-east-1:010410881828:certificate/7ec6fa1d-6181-4b69-8ee0-df7e1f15a537
+    Cors:
+      AllowMethods: "'GET,OPTIONS'"
+      AllowHeaders: "'content-type,origin'"
+      AllowOrigin: "'https://*.tacocat.com'"
+      AllowCredentials: true
   Function:
     Runtime: nodejs18.x
     Architectures:
