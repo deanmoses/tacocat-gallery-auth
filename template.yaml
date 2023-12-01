@@ -7,7 +7,7 @@ AWSTemplateFormatVersion: 2010-09-09
 # -----------------------------------------------------------------------------
 # This particular template defines the authentication API for Tacocat Gallery
 # -----------------------------------------------------------------------------
-Description: Tacocat Gallery authentication API
+Description: Tacocat gallery authentication API
 
 # -----------------------------------------------------------------------------
 # This file is written in SAM syntax, and gets transfomed and expanded into a  
@@ -23,20 +23,24 @@ Transform: AWS::Serverless-2016-10-31
 # This is the only way to define constants for use elsewhere in the template
 # -----------------------------------------------------------------------------
 Parameters:
-  GalleryAppBaseURI:
+  StageName:
     Type: String
-    Default: https://pix.tacocat.com
-    Description: Root URL of the Tacocat photo gallery web app, like https://pix.tacocat.com
-  AuthAppDomain:
+    Description: Either 'dev' or 'prod'
+    Default: dev # For prod, set in samconfig.toml
+  GalleryAppDomain:
     Type: String
-    Default: auth.pix.tacocat.com
-    Description: Domain of this authentication app.  Must be a subdomain of GalleryAppBaseURI for the cookies to work.
+    Default: staging-pix.tacocat.com
+    Description: Domain of the Tacocat photo gallery web app, like pix.tacocat.com # For prod, set in samconfig.toml
+  ApiDomainCertificateArn:
+    Type: String
+    Description: ARN of the ACM certificate for the GalleryAppDomain domain
+    Default: arn:aws:acm:us-east-1:010410881828:certificate/a85d1634-2234-4a5d-b59a-9a38e9ca7747 # For prod, set in samconfig.toml
   CognitoUserPoolID:
     Type: String
     Default: us-east-1_DdPFtamLz
   CognitoBaseURI:
     Type: String
-    Default: https://tacocatgallerytest.auth.us-east-1.amazoncognito.com
+    Default: https://login.tacocat.com
     Description: Root URL of the user pool.  It's found in AWS Cognito under the user pool > App Integration > Configuration
   CognitoClientID:
     Type: String
@@ -47,40 +51,26 @@ Parameters:
     Default: /
     Description: Path within the gallery web app (GalleryAppBaseURI) to send users after Cognito logs them out.
 
-# -----------------------------------------------------------------------------
-# Output values for use after AWS creates the stack, such as to:
-#  - Import into other stacks (to create cross-stack references)
-#  - Return in response (to describe stack calls)
-#  - View on the AWS CloudFormation console
-# For example, you can output a S3 bucket name for a stack to make the bucket
-# easier to find.
-# -----------------------------------------------------------------------------
-Outputs:
-  WebEndpoint:
-    Description: "API Gateway endpoint URL"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/"
-
-
 # ------------------------------------------------------------------------------
 # Configuration inheritable by all Lambda functions and other types of Resources
 # ------------------------------------------------------------------------------
 Globals:
-  Api:
-    Name: Tacocat Gallery Authentication API
-    Domain:
-      DomainName: !Ref AuthAppDomain
-      CertificateArn: arn:aws:acm:us-east-1:010410881828:certificate/7ec6fa1d-6181-4b69-8ee0-df7e1f15a537
-    Cors:
-      AllowMethods: "'GET,OPTIONS'"
-      AllowHeaders: "'content-type,origin'"
-      AllowOrigin: "'https://*.tacocat.com'"
-      AllowCredentials: true
   Function:
     Runtime: nodejs18.x
     Architectures:
       - x86_64
     MemorySize: 128
     Timeout: 100
+  Api:
+    Name: !Sub "Tacocat Gallery Auth API - ${StageName}"
+    Domain:
+      DomainName: !Sub "auth.${GalleryAppDomain}"
+      CertificateArn: !Ref ApiDomainCertificateArn
+    Cors:
+      AllowMethods: "'GET,OPTIONS,POST,PUT,DELETE,PATCH'"
+      AllowHeaders: "'content-type,origin'"
+      AllowOrigin: !Sub "'https://*.${GalleryAppDomain}'"
+      AllowCredentials: true
 
 # -----------------------------------------------------------------------------
 # Resources are the actual AWS systems that will be provisioned
@@ -112,8 +102,8 @@ Resources:
         - !Ref LayerCommons
       Environment:
         Variables:
-          AuthAppDomain: !Ref AuthAppDomain
-          GalleryAppBaseURI: !Ref GalleryAppBaseURI
+          AuthAppDomain: !Sub "auth.${GalleryAppDomain}"
+          GalleryAppBaseURI: !Sub "https://${GalleryAppDomain}"
           CognitoUserPoolID: !Ref CognitoUserPoolID
           CognitoBaseURI: !Ref CognitoBaseURI
           CognitoClientID: !Ref CognitoClientID
@@ -140,8 +130,8 @@ Resources:
         - !Ref LayerCommons
       Environment:
         Variables:
-          AuthAppDomain: !Ref AuthAppDomain
-          GalleryAppBaseURI: !Ref GalleryAppBaseURI
+          AuthAppDomain: !Sub "auth.${GalleryAppDomain}"
+          GalleryAppBaseURI: !Sub "https://${GalleryAppDomain}"
           CognitoUserPoolID: !Ref CognitoUserPoolID
           CognitoBaseURI: !Ref CognitoBaseURI
           CognitoClientID: !Ref CognitoClientID
@@ -168,8 +158,8 @@ Resources:
         - !Ref LayerCommons
       Environment:
         Variables:
-          AuthAppDomain: !Ref AuthAppDomain
-          GalleryAppBaseURI: !Ref GalleryAppBaseURI
+          AuthAppDomain: !Sub "auth.${GalleryAppDomain}"
+          GalleryAppBaseURI: !Sub "https://${GalleryAppDomain}"
           CognitoUserPoolID: !Ref CognitoUserPoolID
           CognitoBaseURI: !Ref CognitoBaseURI
           CognitoClientID: !Ref CognitoClientID
@@ -196,8 +186,8 @@ Resources:
         - !Ref LayerCommons
       Environment:
         Variables:
-          AuthAppDomain: !Ref AuthAppDomain
-          GalleryAppBaseURI: !Ref GalleryAppBaseURI
+          AuthAppDomain: !Sub "auth.${GalleryAppDomain}"
+          GalleryAppBaseURI: !Sub "https://${GalleryAppDomain}"
           CognitoUserPoolID: !Ref CognitoUserPoolID
           CognitoBaseURI: !Ref CognitoBaseURI
           CognitoClientID: !Ref CognitoClientID
@@ -213,3 +203,15 @@ Resources:
       BuildProperties:
         External:
           commons
+
+# -----------------------------------------------------------------------------
+# Outputs
+# -----------------------------------------------------------------------------
+Outputs:
+  AwsApi:
+    Description: AWS API URL (not used)
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/"
+
+  Api:
+      Description: API URL (use this)
+      Value: !Sub "https://auth.${GalleryAppDomain}"

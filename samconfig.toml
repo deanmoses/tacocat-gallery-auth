@@ -4,7 +4,7 @@ version = 0.1
 
 [default]
 [default.global.parameters]
-stack_name = "tacocat-gallery-auth"
+stack_name = "tacocat-gallery-auth-dev"
 
 [default.build.parameters]
 cached = true
@@ -17,7 +17,7 @@ lint = true
 capabilities = "CAPABILITY_IAM"
 confirm_changeset = true
 resolve_s3 = true
-s3_prefix = "tacocat-gallery-auth"
+s3_prefix = "tacocat-gallery-auth/dev"
 region = "us-east-1"
 image_repositories = []
 
@@ -29,3 +29,16 @@ warm_containers = "EAGER"
 
 [default.local_start_lambda.parameters]
 warm_containers = "EAGER"
+
+[prod]
+[prod.global]
+[prod.global.parameters]
+stack_name = "tacocat-gallery-auth-prod"
+
+[prod.sync]
+[prod.sync.parameters]
+watch = false
+
+[prod.deploy.parameters]
+s3_prefix = "tacocat-gallery-auth/prod"
+parameter_overrides = "Environment=prod StageName=prod"
