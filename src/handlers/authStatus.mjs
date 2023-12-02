@@ -11,7 +11,7 @@
 import { CognitoJwtVerifier } from 'aws-jwt-verify';
 import { getCookie } from 'commons/cookies.js';
 import { getTokensFromCognito } from 'commons/authTokens.js';
-import { COGNITO_POOL_ID, COGNITO_CLIENT_ID } from 'commons/env.js';
+import { COGNITO_POOL_ID, COGNITO_CLIENT_ID, GALLERY_APP_DOMAIN } from 'commons/env.js';
 
 /**
  * The function called when the Lambda is invoked
@@ -78,7 +78,7 @@ export const handler = async (event) => {
 	response.headers = {
 			"Content-Type": "application/json",
 			"Access-Control-Allow-Headers" : "X-Requested-With,Content-Type",
-			"Access-Control-Allow-Origin": event.headers.origin,
+			"Access-Control-Allow-Origin": `https://${GALLERY_APP_DOMAIN}`,
 			"Access-Control-Allow-Methods": "GET, OPTIONS",
 			"Access-Control-Allow-Credentials": "true",
 			'cache-control': 'no-cache, no-store, must-revalidate',

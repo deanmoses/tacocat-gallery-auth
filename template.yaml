@@ -29,8 +29,8 @@ Parameters:
     Default: dev # For prod, set in samconfig.toml
   GalleryAppDomain:
     Type: String
-    Default: staging-pix.tacocat.com
     Description: Domain of the Tacocat photo gallery web app, like pix.tacocat.com # For prod, set in samconfig.toml
+    Default: staging-pix.tacocat.com
   ApiDomainCertificateArn:
     Type: String
     Description: ARN of the ACM certificate for the GalleryAppDomain domain
@@ -61,15 +61,18 @@ Globals:
       - x86_64
     MemorySize: 128
     Timeout: 100
+    Environment:
+        Variables:
+          GalleryAppDomain: !Ref GalleryAppDomain
   Api:
     Name: !Sub "Tacocat Gallery Auth API - ${StageName}"
     Domain:
       DomainName: !Sub "auth.${GalleryAppDomain}"
       CertificateArn: !Ref ApiDomainCertificateArn
     Cors:
-      AllowMethods: "'GET,OPTIONS,POST,PUT,DELETE,PATCH'"
+      AllowMethods: "'GET,OPTIONS'"
       AllowHeaders: "'content-type,origin'"
-      AllowOrigin: !Sub "'https://*.${GalleryAppDomain}'"
+      AllowOrigin: !Sub "'https://${GalleryAppDomain}'"
       AllowCredentials: true
 
 # -----------------------------------------------------------------------------

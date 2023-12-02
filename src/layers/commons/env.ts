@@ -6,6 +6,7 @@ export const COGNITO_CLIENT_ID = getEnv('CognitoClientID');
 export const COGNITO_CLIENT_SECRET = getEnv('CognitoClientSecret');
 export const GALLERY_APP_BASE_URI = getEnv('GalleryAppBaseURI');
 export const AUTH_APP_DOMAIN = getEnv('AuthAppDomain');
+export const GALLERY_APP_DOMAIN= getEnv('GalleryAppDomain');
 
 function getEnv(environmentVarName: string): string {
     const environmentVarValue = process.env[environmentVarName];
