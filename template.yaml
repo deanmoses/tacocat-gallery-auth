@@ -34,7 +34,7 @@ Parameters:
   ApiDomainCertificateArn:
     Type: String
     Description: ARN of the ACM certificate for the GalleryAppDomain domain
-    Default: arn:aws:acm:us-east-1:010410881828:certificate/a85d1634-2234-4a5d-b59a-9a38e9ca7747 # For prod, set in samconfig.toml
+    Default: arn:aws:acm:us-east-1:010410881828:certificate/092ab57c-f87d-4c44-a72c-63cfbbb55800 # For prod, set in samconfig.toml
   CognitoUserPoolID:
     Type: String
     Default: us-east-1_DdPFtamLz
