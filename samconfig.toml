@@ -20,6 +20,14 @@ resolve_s3 = true
 s3_prefix = "tacocat-gallery-auth/dev"
 region = "us-east-1"
 image_repositories = []
+parameter_overrides = [
+    "CognitoBaseURI=https://login.tacocat.com",
+    "CognitoUserPoolID=us-east-1_DdPFtamLz",
+    "CognitoClientID=7asah0n7edj39i2b9st1fu1olo",
+    "StageName=dev",
+    "GalleryAppDomain=staging-pix.tacocat.com",
+    "ApiDomainCertificateArn=arn:aws:acm:us-east-1:010410881828:certificate/092ab57c-f87d-4c44-a72c-63cfbbb55800",
+]
 
 [default.sync.parameters]
 watch = true
@@ -41,4 +49,11 @@ watch = false
 
 [prod.deploy.parameters]
 s3_prefix = "tacocat-gallery-auth/prod"
-parameter_overrides = "Environment=prod StageName=prod"
+parameter_overrides = [
+    "CognitoBaseURI=https://login.tacocat.com",
+    "CognitoUserPoolID=us-east-1_DdPFtamLz",
+    "CognitoClientID=7asah0n7edj39i2b9st1fu1olo",
+    "StageName=prod",
+    "GalleryAppDomain=pix.tacocat.com",
+    "ApiDomainCertificateArn=arn:aws:acm:us-east-1:010410881828:certificate/e142cda0-96db-4651-92fd-35dd9a52e9a2",
+]

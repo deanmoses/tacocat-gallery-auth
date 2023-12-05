@@ -26,25 +26,20 @@ Parameters:
   StageName:
     Type: String
     Description: Either 'dev' or 'prod'
-    Default: dev # For prod, set in samconfig.toml
   GalleryAppDomain:
     Type: String
-    Description: Domain of the Tacocat photo gallery web app, like pix.tacocat.com # For prod, set in samconfig.toml
-    Default: staging-pix.tacocat.com
+    Description: Domain of the Tacocat photo gallery web app, like pix.tacocat.com
   ApiDomainCertificateArn:
     Type: String
     Description: ARN of the ACM certificate for the GalleryAppDomain domain
-    Default: arn:aws:acm:us-east-1:010410881828:certificate/092ab57c-f87d-4c44-a72c-63cfbbb55800 # For prod, set in samconfig.toml
   CognitoUserPoolID:
     Type: String
-    Default: us-east-1_DdPFtamLz
+    Default: ID of Cognito user pool
   CognitoBaseURI:
     Type: String
-    Default: https://login.tacocat.com
-    Description: Root URL of the user pool.  It's found in AWS Cognito under the user pool > App Integration > Configuration
+    Description: Root URL of the user pool
   CognitoClientID:
     Type: String
-    Default: 7asah0n7edj39i2b9st1fu1olo
     Description: ID of the app client created in AWS Cognito.  It's found in AWS Cognito under App client information > Client ID
   CognitoLogoutCallbackURI:
     Type: String
