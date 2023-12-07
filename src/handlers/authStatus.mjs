@@ -21,9 +21,6 @@ export const handler = async (event) => {
         throw new Error(`I only accept GET method, but instead I got: ${event.httpMethod}`);
     }
 
-	// The HTTP response we'll be building
-    let response = {};
-
 	// The user we'll be returning
     let user;
 
@@ -70,22 +67,27 @@ export const handler = async (event) => {
 		}
 	}
 
-    const body = {
-        user
-    }
-
-    response.statusCode = 200;
-	response.headers = {
-			"Content-Type": "application/json",
+	const response = {
+		isBase64Encoded: false,
+		headers: {
 			"Access-Control-Allow-Headers" : "X-Requested-With,Content-Type",
 			"Access-Control-Allow-Origin": `https://${GALLERY_APP_DOMAIN}`,
 			"Access-Control-Allow-Methods": "GET, OPTIONS",
 			"Access-Control-Allow-Credentials": "true",
 			'cache-control': 'no-cache, no-store, must-revalidate',
-		pragma: 'no-cache',
-		expires: 0,
-	};
-    response.body = JSON.stringify(body)
+			pragma: 'no-cache',
+			expires: 0,
+		}
+	}
+
+	if (!user) {
+		response.statusCode = 401;
+		response.body = JSON.stringify({errorMessage: 'Unauthorized'})
+	}
+	else {
+		response.statusCode = 200;
+		response.body = JSON.stringify({user})
+	}
 
     // All log statements are written to CloudWatch
     console.info(`response from: ${event.path} statusCode: ${response.statusCode} body: ${response.body}`);
