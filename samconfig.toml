@@ -1,33 +1,16 @@
-# More information about the configuration file can be found here:
-# https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-config.html
+# The AWS Serverless Application Model (SAM) CLI configuration file
 version = 0.1
 
 [default]
 [default.global.parameters]
 stack_name = "tacocat-gallery-auth-dev"
 
-[default.build.parameters]
-cached = true
-parallel = true
-
 [default.validate.parameters]
 lint = true
 
-[default.deploy.parameters]
-capabilities = "CAPABILITY_IAM"
-confirm_changeset = true
-resolve_s3 = true
-s3_prefix = "tacocat-gallery-auth/dev"
-region = "us-east-1"
-image_repositories = []
-parameter_overrides = [
-    "CognitoBaseURI=https://login.tacocat.com",
-    "CognitoUserPoolID=us-east-1_DdPFtamLz",
-    "CognitoClientID=7asah0n7edj39i2b9st1fu1olo",
-    "StageName=dev",
-    "GalleryAppDomain=staging-pix.tacocat.com",
-    "ApiDomainCertificateArn=arn:aws:acm:us-east-1:010410881828:certificate/092ab57c-f87d-4c44-a72c-63cfbbb55800",
-]
+[default.build.parameters]
+cached = true
+parallel = true
 
 [default.sync.parameters]
 watch = true
@@ -38,22 +21,61 @@ warm_containers = "EAGER"
 [default.local_start_lambda.parameters]
 warm_containers = "EAGER"
 
+[default.deploy.parameters]
+s3_prefix = "tacocat-gallery-auth/dev"
+region = "us-east-1"
+resolve_s3 = true
+confirm_changeset = true
+image_repositories = []
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = [
+    "Env=dev",
+    "GalleryAppDomain=staging-pix.tacocat.com",
+    "DomainCertificateArn=arn:aws:acm:us-east-1:010410881828:certificate/092ab57c-f87d-4c44-a72c-63cfbbb55800",
+    "CognitoBaseURI=https://login.tacocat.com",
+    "CognitoUserPoolID=us-east-1_DdPFtamLz",
+    "CognitoClientID=7asah0n7edj39i2b9st1fu1olo",
+]
+
 [prod]
 [prod.global]
 [prod.global.parameters]
 stack_name = "tacocat-gallery-auth-prod"
 
+[prod.validate.parameters]
+lint = true
+
+[prod.build.parameters]
+cached = true
+parallel = true
+
+[prod.package.parameters]
+resolve_s3 = true
+
 [prod.sync]
 [prod.sync.parameters]
 watch = false
 
+[prod.local_start_api.parameters]
+warm_containers = "EAGER"
+
+[prod.local_start_lambda.parameters]
+warm_containers = "EAGER"
+
+
 [prod.deploy.parameters]
 s3_prefix = "tacocat-gallery-auth/prod"
+region = "us-east-1"
+resolve_s3 = true
+confirm_changeset = true
+image_repositories = []
+capabilities = "CAPABILITY_IAM"
 parameter_overrides = [
+    "Env=prod",
+    "GalleryAppDomain=pix.tacocat.com",
+    "DomainCertificateArn=arn:aws:acm:us-east-1:010410881828:certificate/e142cda0-96db-4651-92fd-35dd9a52e9a2",
     "CognitoBaseURI=https://login.tacocat.com",
     "CognitoUserPoolID=us-east-1_DdPFtamLz",
     "CognitoClientID=7asah0n7edj39i2b9st1fu1olo",
-    "StageName=prod",
-    "GalleryAppDomain=pix.tacocat.com",
-    "ApiDomainCertificateArn=arn:aws:acm:us-east-1:010410881828:certificate/e142cda0-96db-4651-92fd-35dd9a52e9a2",
+
 ]

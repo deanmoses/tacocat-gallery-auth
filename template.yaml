@@ -23,28 +23,39 @@ Transform: AWS::Serverless-2016-10-31
 # This is the only way to define constants for use elsewhere in the template
 # -----------------------------------------------------------------------------
 Parameters:
-  StageName:
+  Env:
+    Description: Environment for which the infrastructure will be deployed
     Type: String
-    Description: Either 'dev' or 'prod'
+    AllowedValues:
+      - dev
+      - prod
+    ConstraintDescription: Must be either 'dev' or 'prod'
   GalleryAppDomain:
+    Description: Domain of the Tacocat photo gallery web app 
     Type: String
-    Description: Domain of the Tacocat photo gallery web app, like pix.tacocat.com
-  ApiDomainCertificateArn:
-    Type: String
+    AllowedValues:
+      - staging-pix.tacocat.com
+      - pix.tacocat.com
+    ConstraintDescription: Must be either 'staging-pix.tacocat.com' or 'pix.tacocat.com'
+  DomainCertificateArn:
     Description: ARN of the ACM certificate for the GalleryAppDomain domain
+    Type: String
+    AllowedValues:
+      - arn:aws:acm:us-east-1:010410881828:certificate/092ab57c-f87d-4c44-a72c-63cfbbb55800 # staging-pix.tacocat.com
+      - arn:aws:acm:us-east-1:010410881828:certificate/e142cda0-96db-4651-92fd-35dd9a52e9a2 # pix.tacocat.com
   CognitoUserPoolID:
+    Description: ID of Cognito user pool
     Type: String
-    Default: ID of Cognito user pool
   CognitoBaseURI:
-    Type: String
     Description: Root URL of the user pool
-  CognitoClientID:
     Type: String
+  CognitoClientID:
     Description: ID of the app client created in AWS Cognito.  It's found in AWS Cognito under App client information > Client ID
+    Type: String
   CognitoLogoutCallbackURI:
+    Description: Path within the gallery web app (GalleryAppBaseURI) to send users after Cognito logs them out.
     Type: String
     Default: /
-    Description: Path within the gallery web app (GalleryAppBaseURI) to send users after Cognito logs them out.
 
 # ------------------------------------------------------------------------------
 # Configuration inheritable by all Lambda functions and other types of Resources
@@ -60,10 +71,10 @@ Globals:
         Variables:
           GalleryAppDomain: !Ref GalleryAppDomain
   Api:
-    Name: !Sub "Tacocat Gallery Auth API - ${StageName}"
+    Name: !Sub Tacocat Gallery Auth API - ${Env}
     Domain:
-      DomainName: !Sub "auth.${GalleryAppDomain}"
-      CertificateArn: !Ref ApiDomainCertificateArn
+      DomainName: !Sub auth.${GalleryAppDomain}
+      CertificateArn: !Ref DomainCertificateArn
     Cors:
       AllowMethods: "'GET,OPTIONS'"
       AllowHeaders: "'content-type,origin'"
@@ -100,8 +111,8 @@ Resources:
         - !Ref LayerCommons
       Environment:
         Variables:
-          AuthAppDomain: !Sub "auth.${GalleryAppDomain}"
-          GalleryAppBaseURI: !Sub "https://${GalleryAppDomain}"
+          AuthAppDomain: !Sub auth.${GalleryAppDomain}
+          GalleryAppBaseURI: !Sub https://${GalleryAppDomain}
           CognitoUserPoolID: !Ref CognitoUserPoolID
           CognitoBaseURI: !Ref CognitoBaseURI
           CognitoClientID: !Ref CognitoClientID
@@ -128,8 +139,8 @@ Resources:
         - !Ref LayerCommons
       Environment:
         Variables:
-          AuthAppDomain: !Sub "auth.${GalleryAppDomain}"
-          GalleryAppBaseURI: !Sub "https://${GalleryAppDomain}"
+          AuthAppDomain: !Sub auth.${GalleryAppDomain}
+          GalleryAppBaseURI: !Sub https://${GalleryAppDomain}
           CognitoUserPoolID: !Ref CognitoUserPoolID
           CognitoBaseURI: !Ref CognitoBaseURI
           CognitoClientID: !Ref CognitoClientID
@@ -156,8 +167,8 @@ Resources:
         - !Ref LayerCommons
       Environment:
         Variables:
-          AuthAppDomain: !Sub "auth.${GalleryAppDomain}"
-          GalleryAppBaseURI: !Sub "https://${GalleryAppDomain}"
+          AuthAppDomain: !Sub auth.${GalleryAppDomain}
+          GalleryAppBaseURI: !Sub https://${GalleryAppDomain}
           CognitoUserPoolID: !Ref CognitoUserPoolID
           CognitoBaseURI: !Ref CognitoBaseURI
           CognitoClientID: !Ref CognitoClientID
@@ -184,8 +195,8 @@ Resources:
         - !Ref LayerCommons
       Environment:
         Variables:
-          AuthAppDomain: !Sub "auth.${GalleryAppDomain}"
-          GalleryAppBaseURI: !Sub "https://${GalleryAppDomain}"
+          AuthAppDomain: !Sub auth.${GalleryAppDomain}
+          GalleryAppBaseURI: !Sub https://${GalleryAppDomain}
           CognitoUserPoolID: !Ref CognitoUserPoolID
           CognitoBaseURI: !Ref CognitoBaseURI
           CognitoClientID: !Ref CognitoClientID
@@ -208,8 +219,8 @@ Resources:
 Outputs:
   AwsApi:
     Description: AWS API URL (not used)
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/"
+    Value: !Sub https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/
 
   Api:
       Description: API URL (use this)
-      Value: !Sub "https://auth.${GalleryAppDomain}"
+      Value: !Sub https://auth.${GalleryAppDomain}
