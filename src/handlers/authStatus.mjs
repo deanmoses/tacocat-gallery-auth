@@ -21,6 +21,20 @@ export const handler = async (event) => {
         throw new Error(`I only accept GET method, but instead I got: ${event.httpMethod}`);
     }
 
+	// The response we'll be returning
+	const response = {
+		isBase64Encoded: false,
+		headers: {
+			"Access-Control-Allow-Headers" : "X-Requested-With,Content-Type",
+			"Access-Control-Allow-Origin": `https://${GALLERY_APP_DOMAIN}`,
+			"Access-Control-Allow-Methods": "GET, OPTIONS",
+			"Access-Control-Allow-Credentials": "true",
+			'cache-control': 'no-cache, no-store, must-revalidate',
+			pragma: 'no-cache',
+			expires: 0,
+		}
+	}
+
 	// The user we'll be returning
     let user;
 
@@ -44,16 +58,20 @@ export const handler = async (event) => {
 		// If the refresh token doesn't exist, user is not logged in
 		// If the refresh token DOES exist, try to get a new short-lived ID token
 		if (refreshToken) {
+			console.log('Found refresh token, trying to get new ID token from Cognito');
 			try {
 				// Try to update the tokens
 				const updatedTokens = await getTokensFromCognito({ refreshToken: refreshToken });
+
+				console.log('Got updated tokens from Cognito')
 
 				// Update the cookie for the id token
 				const idExpires = new Date();
 				idExpires.setSeconds(idExpires.getSeconds() + updatedTokens.expires_in);
                 response.multiValueHeaders = {
                     'Set-Cookie': [
-                        `id_token=${updatedTokens.id_token}; HttpOnly; Domain=tacocat.com; SameSite=Strict; Path=/; Expires=${idExpires}`
+                        `id_token=${updatedTokens.id_token}; HttpOnly; Secure; Domain=tacocat.com; SameSite=Strict; Path=/; Expires=${idExpires}`,
+						`was_authenticated=${"Authenticated at " + Date.now()}; Secure; Domain=tacocat.com; SameSite=Strict; Path=/; Expires=${idExpires}`
                     ]
                 }
 
@@ -62,21 +80,8 @@ export const handler = async (event) => {
 				user = { email: idToken.email };
 			} catch (error) {
 				// If the refresh token is invalid, treat user as not logged in
-				console.log('Authentication status error: ' + error);
+				console.error('Error getting refresh token from Cognito: ', error);
 			}
-		}
-	}
-
-	const response = {
-		isBase64Encoded: false,
-		headers: {
-			"Access-Control-Allow-Headers" : "X-Requested-With,Content-Type",
-			"Access-Control-Allow-Origin": `https://${GALLERY_APP_DOMAIN}`,
-			"Access-Control-Allow-Methods": "GET, OPTIONS",
-			"Access-Control-Allow-Credentials": "true",
-			'cache-control': 'no-cache, no-store, must-revalidate',
-			pragma: 'no-cache',
-			expires: 0,
 		}
 	}
 
