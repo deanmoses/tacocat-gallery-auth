@@ -105,6 +105,7 @@ Resources:
   AuthStatusFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Sub ${AWS::StackName}-AuthStatus
       Description: HTTP GET method to get authentication status
       Handler: src/handlers/authStatus.handler
       Layers:
@@ -133,6 +134,7 @@ Resources:
   RedirectToCognitoFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Sub ${AWS::StackName}-RedirectToCognito
       Description: HTTP GET method for redirecting to the AWS Cognito login page
       Handler: src/handlers/redirectToCognito.handler
       Layers:
@@ -161,6 +163,7 @@ Resources:
   LoginCallbackFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Sub ${AWS::StackName}-LoginCallback
       Description: Handles the login callback from the AWS Cognito login page
       Handler: src/handlers/loginCallback.handler
       Layers:
@@ -189,6 +192,7 @@ Resources:
   LogoutFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Sub ${AWS::StackName}-Logout
       Description: Log the user out
       Handler: src/handlers/logout.handler
       Layers:
