@@ -66,7 +66,9 @@ Globals:
     Architectures:
       - x86_64
     MemorySize: 128
-    Timeout: 100
+    Timeout: 100 # TODO decrease this; the default is 3 seconds
+    LoggingConfig:
+      LogFormat: JSON
     Environment:
         Variables:
           GalleryAppDomain: !Ref GalleryAppDomain
