@@ -101,7 +101,7 @@ Resources:
       RetentionPolicy: Delete
     Metadata:
       BuildMethod: makefile
-
+      BuildArchitecture: x86_64
 
   # Lambda for retrieving authentication status
   AuthStatusFunction:
