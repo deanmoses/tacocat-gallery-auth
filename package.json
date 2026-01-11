@@ -1,24 +1,38 @@
 {
     "name": "tacocat-gallery-auth",
     "description": "Tacocat Gallery authentication API app using AWS API Gateway and Lambdas to talk with AWS Cognito",
-    "version": "0.0.1",
+    "version": "0.1.0",
+    "type": "module",
     "private": true,
-    "license": "Apache-2.0",
+    "license": "MIT",
     "dependencies": {
-        "aws-jwt-verify": "^4.0.0"
+        "aws-jwt-verify": "^5.1.1"
     },
     "devDependencies": {
-        "@types/aws-lambda": "^8.10.130",
-        "@types/node": "^20.10.4",
-        "aws-sdk-client-mock": "^3.0.0",
-        "jest": "^29.7.0"
+        "@eslint/js": "^9.39.2",
+        "@types/aws-lambda": "^8.10.159",
+        "@types/jest": "^30.0.0",
+        "@types/node": "^25.0.6",
+        "aws-sdk-client-mock": "^4.1.0",
+        "eslint": "^9.39.2",
+        "husky": "^9.1.7",
+        "jest": "^30.2.0",
+        "ts-jest": "^29.4.6",
+        "typescript": "^5.9.3",
+        "typescript-eslint": "^8.52.0"
     },
     "scripts": {
-        "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js",
+        "test": "jest",
+        "typecheck": "tsc --noEmit",
+        "lint": "eslint src --fix",
+        "lint:check": "eslint src",
         "watch": "sam sync",
-        "tail": "sam logs --include-traces --tail"
+        "tail": "sam logs --include-traces --tail",
+        "prepare": "husky"
     },
     "jest": {
+        "preset": "ts-jest",
+        "testEnvironment": "node",
         "testMatch": [
             "**/__tests__/**/*.[jt]s?(x)",
             "**/?(*.)+(spec|test).[jt]s?(x)",
@@ -26,6 +40,7 @@
             "**/?(*.)+(spec|test).mjs?(x)"
         ],
         "moduleFileExtensions": [
+            "ts",
             "mjs",
             "js"
         ]

@@ -10,10 +10,10 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: Tacocat gallery authentication API
 
 # -----------------------------------------------------------------------------
-# This file is written in SAM syntax, and gets transfomed and expanded into a  
-# CloudFormation template.  The CloudFormation template is what actually gets 
+# This file is written in SAM syntax, and gets transfomed and expanded into a
+# CloudFormation template.  The CloudFormation template is what actually gets
 # deployed.  The main point is that SAM syntax is much simpler, with a lot less
-# boilerplate around declaring resources like Lambda functions and their 
+# boilerplate around declaring resources like Lambda functions and their
 # accompanying execution roles.
 # -----------------------------------------------------------------------------
 Transform: AWS::Serverless-2016-10-31
@@ -31,7 +31,7 @@ Parameters:
       - prod
     ConstraintDescription: Must be either 'dev' or 'prod'
   GalleryAppDomain:
-    Description: Domain of the Tacocat photo gallery web app 
+    Description: Domain of the Tacocat photo gallery web app
     Type: String
     AllowedValues:
       - staging-pix.tacocat.com
@@ -62,11 +62,11 @@ Parameters:
 # ------------------------------------------------------------------------------
 Globals:
   Function:
-    Runtime: nodejs20.x
+    Runtime: nodejs24.x
     Architectures:
-      - x86_64
+      - arm64
     MemorySize: 128
-    Timeout: 100 # TODO decrease this; the default is 3 seconds
+    Timeout: 10
     LoggingConfig:
       LogFormat: JSON
     Environment:
@@ -88,30 +88,14 @@ Globals:
 # -----------------------------------------------------------------------------
 Resources:
 
-  # -----------------------------------------------------------------------------
-  # A Layer is a set of files that gets zipped up and included with a Lambda
-  # This contains the TypeScript library modules that Lambda functions will call
-  # -----------------------------------------------------------------------------
-  LayerCommons:
-    Type: AWS::Serverless::LayerVersion
-    Properties:
-      ContentUri: src/layers/commons/
-      CompatibleRuntimes:
-        - nodejs18.x
-      RetentionPolicy: Delete
-    Metadata:
-      BuildMethod: makefile
-      BuildArchitecture: x86_64
-
   # Lambda for retrieving authentication status
   AuthStatusFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub ${AWS::StackName}-AuthStatus
       Description: HTTP GET method to get authentication status
-      Handler: src/handlers/authStatus.handler
-      Layers:
-        - !Ref LayerCommons
+      Handler: authStatus.handler
+      CodeUri: src/handlers/
       Environment:
         Variables:
           AuthAppDomain: !Sub auth.${GalleryAppDomain}
@@ -128,9 +112,13 @@ Resources:
             Path: /
             Method: GET
     Metadata:
+      BuildMethod: esbuild
       BuildProperties:
-        External:
-          commons
+        Minify: true
+        Target: es2022
+        Sourcemap: true
+        EntryPoints:
+          - authStatus.ts
 
   # Lambda for redirecting to the AWS Cognito login page
   RedirectToCognitoFunction:
@@ -138,9 +126,8 @@ Resources:
     Properties:
       FunctionName: !Sub ${AWS::StackName}-RedirectToCognito
       Description: HTTP GET method for redirecting to the AWS Cognito login page
-      Handler: src/handlers/redirectToCognito.handler
-      Layers:
-        - !Ref LayerCommons
+      Handler: redirectToCognito.handler
+      CodeUri: src/handlers/
       Environment:
         Variables:
           AuthAppDomain: !Sub auth.${GalleryAppDomain}
@@ -157,9 +144,13 @@ Resources:
             Path: /login
             Method: GET
     Metadata:
+      BuildMethod: esbuild
       BuildProperties:
-        External:
-          commons
+        Minify: true
+        Target: es2022
+        Sourcemap: true
+        EntryPoints:
+          - redirectToCognito.ts
 
   # Lambda for handling the login callback from the AWS Cognito login page
   LoginCallbackFunction:
@@ -167,9 +158,8 @@ Resources:
     Properties:
       FunctionName: !Sub ${AWS::StackName}-LoginCallback
       Description: Handles the login callback from the AWS Cognito login page
-      Handler: src/handlers/loginCallback.handler
-      Layers:
-        - !Ref LayerCommons
+      Handler: loginCallback.handler
+      CodeUri: src/handlers/
       Environment:
         Variables:
           AuthAppDomain: !Sub auth.${GalleryAppDomain}
@@ -186,9 +176,13 @@ Resources:
             Path: /login_callback
             Method: GET
     Metadata:
+      BuildMethod: esbuild
       BuildProperties:
-        External:
-          commons
+        Minify: true
+        Target: es2022
+        Sourcemap: true
+        EntryPoints:
+          - loginCallback.ts
 
   # Lambda for logging the user out
   LogoutFunction:
@@ -196,9 +190,8 @@ Resources:
     Properties:
       FunctionName: !Sub ${AWS::StackName}-Logout
       Description: Log the user out
-      Handler: src/handlers/logout.handler
-      Layers:
-        - !Ref LayerCommons
+      Handler: logout.handler
+      CodeUri: src/handlers/
       Environment:
         Variables:
           AuthAppDomain: !Sub auth.${GalleryAppDomain}
@@ -215,9 +208,13 @@ Resources:
             Path: /logout
             Method: GET
     Metadata:
+      BuildMethod: esbuild
       BuildProperties:
-        External:
-          commons
+        Minify: true
+        Target: es2022
+        Sourcemap: true
+        EntryPoints:
+          - logout.ts
 
 # -----------------------------------------------------------------------------
 # Outputs

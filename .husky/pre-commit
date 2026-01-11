@@ -1,0 +1,13 @@
+set -e
+
+# Lint, typecheck, and test
+npm run lint
+npm run typecheck
+npm test
+
+# Scan for secrets (requires installing gitleaks)
+if command -v gitleaks &> /dev/null; then
+    gitleaks protect --staged --no-banner
+else
+    echo "Warning: gitleaks not installed, skipping secret scan"
+fi
