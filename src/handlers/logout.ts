@@ -1,12 +1,13 @@
 /*
     Log the user out.
 
-    Deletes auth cookies and redirects to logout functionality hosted by 
+    Deletes auth cookies and redirects to logout functionality hosted by
     AWS Cognito, which logs user out of Cognito.
 */
-import { getLogoutUrl } from 'commons/authUriHelpers.js';
+import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { getLogoutUrl } from '../lib/authUriHelpers';
 
-export const handler = async (event) => {
+export const handler = (event: APIGatewayProxyEvent): APIGatewayProxyResult => {
     if (event.httpMethod !== 'GET') {
         throw new Error(`I only accept GET method, but instead I got: ${event.httpMethod}`);
     }
@@ -23,6 +24,7 @@ export const handler = async (event) => {
                 `refresh_token=; HttpOnly; Domain=tacocat.com; SameSite=Strict; Path=/; Expires=${expires}`,
                 `was_authenticated=; Domain=tacocat.com; SameSite=Strict; Path=/; Expires=${expires}`
             ]
-        }
+        },
+        body: ''
     };
 }

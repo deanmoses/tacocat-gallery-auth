@@ -47,7 +47,7 @@ type TokenOptions = TokenOptionsCode | TokenOptionsRefresh;
  * 
  * @see https://docs.aws.amazon.com/cognito/latest/developerguide/token-endpoint.html
  */
-export async function getTokensFromCognito(options: TokenOptions) {
+export async function getTokensFromCognito(options: TokenOptions): Promise<Tokens> {
 	const baseUrl = COGNITO_BASE_URI;
 	const clientId = COGNITO_CLIENT_ID;
 	const clientSecret = COGNITO_CLIENT_SECRET;
@@ -74,10 +74,11 @@ export async function getTokensFromCognito(options: TokenOptions) {
 	if (options.code) bodyObj.code = options.code;
 	if (options.refreshToken) bodyObj.refresh_token = options.refreshToken;
 
-	// Serialize the body object to a string
-	const body: string = Object.entries(bodyObj)
-		.map(([k, v]) => `${k}=${v}`)
-		.join('&');
+	// Serialize the body object to URL-encoded form data
+	const body = new URLSearchParams(
+		Object.entries(bodyObj)
+			.filter((entry): entry is [string, string] => entry[1] !== undefined)
+	).toString();
 
 	// Make the request and return the response
 	const response = await fetch(cognitoTokenExchangeUrl.toString(), {
@@ -89,6 +90,11 @@ export async function getTokensFromCognito(options: TokenOptions) {
 		},
 		body
 	});
+
+	if (!response.ok) {
+		const errorBody = await response.text();
+		throw new Error(`Cognito token exchange failed (${response.status}): ${errorBody}`);
+	}
 
 	return (await response.json()) as Tokens;
 }
