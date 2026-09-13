@@ -1,15 +1,22 @@
 {
     "compilerOptions": {
         "target": "ES2022",
-        "module": "commonjs",
-        "lib": ["ES2022"],
         "strict": true,
+        "noEmit": true,
+        "module": "preserve",
+        "moduleResolution": "bundler",
         "esModuleInterop": true,
         "skipLibCheck": true,
+        // tsc is the single source of truth for type errors: this lets ts-jest
+        // transpile without re-checking types that `npm run typecheck` already checked.
+        "isolatedModules": true,
+        "types": ["node", "jest"],
         "forceConsistentCasingInFileNames": true,
-        "resolveJsonModule": true,
-        "declaration": true,
-        "outDir": "./dist"
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitOverride": true,
+        "noImplicitReturns": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true
     },
     "include": ["src/**/*"],
     "exclude": ["node_modules", ".aws-sam"]

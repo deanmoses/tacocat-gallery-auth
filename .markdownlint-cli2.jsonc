@@ -1,0 +1,5 @@
+{
+    // Rule configuration lives in .markdownlint.json, which this file inherits.
+    "globs": ["**/*.md"],
+    "ignores": ["**/node_modules/**", ".aws-sam/**"],
+}

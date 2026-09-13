@@ -10,7 +10,7 @@
                 "logicalId": "RedirectToCognitoFunction"
             },
             "lambda": {
-                "runtime": "nodejs18.x"
+                "runtime": "nodejs24.x"
             }
         },
         {
@@ -23,7 +23,7 @@
                 "logicalId": "AuthStatusFunction"
             },
             "lambda": {
-                "runtime": "nodejs18.x",
+                "runtime": "nodejs24.x",
                 "payload": {
                     "path": "${workspaceFolder}/events/auth-status-event-no-cookies.json"
                 },
@@ -40,7 +40,7 @@
                 "logicalId": "AuthStatusFunction"
             },
             "lambda": {
-                "runtime": "nodejs18.x",
+                "runtime": "nodejs24.x",
                 "payload": {
                     "path": "${workspaceFolder}/events/auth-status-event-multiple-cookies.json"
                 },
@@ -71,6 +71,6 @@
             "remoteRoot": "/var/task",
             "protocol": "inspector",
             "stopOnEntry": false
-        },
+        }
     ]
 }

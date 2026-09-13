@@ -2,47 +2,49 @@
     "name": "tacocat-gallery-auth",
     "description": "Tacocat Gallery authentication API app using AWS API Gateway and Lambdas to talk with AWS Cognito",
     "version": "0.1.0",
-    "type": "module",
     "private": true,
     "license": "MIT",
+    "engines": {
+        "node": ">=24 <25"
+    },
     "dependencies": {
-        "aws-jwt-verify": "^5.1.1"
+        "aws-jwt-verify": "^5.2.1"
     },
     "devDependencies": {
-        "@eslint/js": "^9.39.2",
-        "@types/aws-lambda": "^8.10.159",
+        "@eslint/js": "^10.0.1",
+        "@types/aws-lambda": "^8.10.163",
         "@types/jest": "^30.0.0",
-        "@types/node": "^25.0.6",
-        "aws-sdk-client-mock": "^4.1.0",
-        "eslint": "^9.39.2",
+        "@types/node": "^24.13.4",
+        "esbuild": "^0.28.2",
+        "eslint": "^10.10.0",
+        "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-prettier": "^5.5.6",
+        "globals": "^17.12.0",
         "husky": "^9.1.7",
-        "jest": "^30.2.0",
-        "ts-jest": "^29.4.6",
-        "typescript": "^5.9.3",
-        "typescript-eslint": "^8.52.0"
+        "jest": "^30.5.1",
+        "lint-staged": "^17.5.1",
+        "markdownlint-cli2": "^0.23.2",
+        "prettier": "^3.9.6",
+        "ts-jest": "^29.4.12",
+        "typescript": "^6.0.3",
+        "typescript-eslint": "^8.70.0"
     },
     "scripts": {
         "test": "jest",
-        "typecheck": "tsc --noEmit",
-        "lint": "eslint src --fix",
-        "lint:check": "eslint src",
+        "typecheck": "tsc",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
+        "lint:md": "markdownlint-cli2",
+        "lint:cfn": "sam validate --lint",
+        "lint:shell": "shellcheck .husky/pre-commit",
+        "lint:actions": "actionlint",
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
         "watch": "sam sync",
         "tail": "sam logs --include-traces --tail",
         "prepare": "husky"
     },
-    "jest": {
-        "preset": "ts-jest",
-        "testEnvironment": "node",
-        "testMatch": [
-            "**/__tests__/**/*.[jt]s?(x)",
-            "**/?(*.)+(spec|test).[jt]s?(x)",
-            "**/__tests__/**/*.mjs?(x)",
-            "**/?(*.)+(spec|test).mjs?(x)"
-        ],
-        "moduleFileExtensions": [
-            "ts",
-            "mjs",
-            "js"
-        ]
+    "overrides": {
+        "smol-toml": "^1.8.0"
     }
 }

@@ -1,15 +1,15 @@
 {
-  "permissions": {
-    "allow": [
-      "Bash(sam build:*)",
-      "Bash(npx jest:*)",
-      "Bash(npm run lint)",
-      "Bash(npm run lint:check:*)",
-      "Bash(npm test:*)",
-      "Bash(npm run typecheck:*)"
-    ],
-    "additionalDirectories": [
-      "./src"
-    ]
-  }
+    "permissions": {
+        "allow": [
+            "Bash(sam build:*)",
+            "Bash(sam validate:*)",
+            "Bash(npx jest:*)",
+            "Bash(npm test:*)",
+            "Bash(npm run lint)",
+            "Bash(npm run lint:*)",
+            "Bash(npm run format:check)",
+            "Bash(npm run typecheck:*)"
+        ],
+        "additionalDirectories": ["./src"]
+    }
 }
