@@ -1,10 +1,13 @@
 const mockVerify = jest.fn();
 const mockCreate = jest.fn(() => ({ verify: (token: string): unknown => mockVerify(token) }));
 jest.mock('aws-jwt-verify', () => ({ CognitoJwtVerifier: { create: (): unknown => mockCreate() } }));
-jest.mock('../lib/authTokens', () => ({ getTokensFromCognito: jest.fn() }));
+jest.mock('../lib/authTokens', () => ({
+    ...jest.requireActual<typeof import('../lib/authTokens')>('../lib/authTokens'),
+    getTokensFromCognito: jest.fn(),
+}));
 
 import { handler } from './authStatus';
-import { getTokensFromCognito } from '../lib/authTokens';
+import { getTokensFromCognito, TokenExchangeError } from '../lib/authTokens';
 import { apiGatewayEvent, setCookies } from '../testing/apiGatewayEvent';
 
 const getTokens = jest.mocked(getTokensFromCognito);
@@ -13,6 +16,7 @@ const refreshed = { access_token: 'at', id_token: 'new-id', token_type: 'Bearer'
 describe('authStatus handler', () => {
     beforeEach(() => {
         jest.spyOn(console, 'info').mockImplementation(() => undefined);
+        jest.spyOn(console, 'warn').mockImplementation(() => undefined);
         jest.spyOn(console, 'error').mockImplementation(() => undefined);
     });
     afterEach(() => jest.restoreAllMocks());
@@ -65,12 +69,23 @@ describe('authStatus handler', () => {
         expect(cookies[2]).toMatch(/^refresh_token=rotated; /);
     });
 
-    it('returns 401 when the refresh fails', async () => {
-        getTokens.mockRejectedValue(new Error('invalid_grant'));
+    it('returns 401 and warns, not errors, when Cognito rejects the refresh token', async () => {
+        getTokens.mockRejectedValue(new TokenExchangeError(400, '{"error":"invalid_grant"}'));
 
         const result = await handler(apiGatewayEvent({ cookie: 'refresh_token=r' }));
 
         expect(result.statusCode).toBe(401);
         expect(setCookies(result)).toEqual([]);
+        expect(console.warn).toHaveBeenCalledWith(expect.objectContaining({ event: 'token_refresh_error' }));
+        expect(console.error).not.toHaveBeenCalled();
+    });
+
+    it('returns 401 and logs an error when Cognito is unwell', async () => {
+        getTokens.mockRejectedValue(new TokenExchangeError(503, 'Service Unavailable'));
+
+        const result = await handler(apiGatewayEvent({ cookie: 'refresh_token=r' }));
+
+        expect(result.statusCode).toBe(401);
+        expect(console.error).toHaveBeenCalledWith(expect.objectContaining({ event: 'token_refresh_error' }));
     });
 });

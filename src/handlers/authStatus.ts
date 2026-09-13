@@ -8,7 +8,7 @@ import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { CognitoJwtVerifier } from 'aws-jwt-verify';
 import type { CognitoJwtPayload } from 'aws-jwt-verify/jwt-model';
 import { getCookie } from '../lib/cookies';
-import { getTokensFromCognito } from '../lib/authTokens';
+import { getTokensFromCognito, TokenExchangeError } from '../lib/authTokens';
 import {
     ID_TOKEN_COOKIE,
     REFRESH_TOKEN_COOKIE,
@@ -87,8 +87,10 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
                 const idToken = await verifyToken(updatedTokens.id_token);
                 user = idToken ? { email: idToken.email as string } : undefined;
             } catch (error) {
-                // If the refresh token is invalid, treat user as not logged in
-                console.error({
+                // Cognito answers 400 when the refresh token has expired or been
+                // revoked, which is a session ending normally, not an outage.
+                const log = error instanceof TokenExchangeError && error.status === 400 ? console.warn : console.error;
+                log({
                     event: 'token_refresh_error',
                     error: error instanceof Error ? error.message : String(error),
                 });
