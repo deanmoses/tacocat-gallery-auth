@@ -77,9 +77,10 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
             body: '',
         };
     } else {
-        // If the response from Cognito doesn't have the stuff we expect,
-        // log the full response for debugging but return a generic error to the client
-        console.error({ event: 'login_callback_error', error: 'Unexpected token response', tokens });
+        // Name the missing fields rather than logging the response: a partial
+        // response may still carry live tokens, which must not reach CloudWatch.
+        const missing = (['access_token', 'id_token', 'refresh_token'] as const).filter((field) => !tokens[field]);
+        console.error({ event: 'login_callback_error', error: 'Unexpected token response', missing });
         return {
             statusCode: 500,
             body: JSON.stringify({ error: 'Authentication failed. Please try again.' }),

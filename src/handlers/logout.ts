@@ -12,6 +12,8 @@ export const handler = (event: APIGatewayProxyEvent): APIGatewayProxyResult => {
         throw new Error(`I only accept GET method, but instead I got: ${event.httpMethod}`);
     }
 
+    console.info({ event: 'logout' });
+
     // delete the cookies by setting an expires date in the past
     const expires = 'Thu, 01 Jan 1970 00:00:00 GMT';
 
