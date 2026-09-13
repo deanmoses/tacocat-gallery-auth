@@ -20,6 +20,11 @@ describe('getCookie', () => {
         expect(getCookie(undefined as unknown as string, 'id_token')).toBeNull();
     });
 
+    it('returns an empty string for a cookie with no value', () => {
+        const header = 'id_token=; refresh_token=xyz789';
+        expect(getCookie(header, 'id_token')).toBe('');
+    });
+
     it('handles URL-encoded values', () => {
         const header = 'message=hello%20world';
         expect(getCookie(header, 'message')).toBe('hello world');

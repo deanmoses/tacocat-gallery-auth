@@ -52,7 +52,9 @@ export async function getTokensFromCognito(options: TokenOptions): Promise<Token
     const clientId = COGNITO_CLIENT_ID;
     const clientSecret = COGNITO_CLIENT_SECRET;
 
-    if (!clientSecret) throw Error('No Cognito Client Secret in the environment');
+    if (!clientSecret) {
+        throw Error('No Cognito Client Secret in the environment');
+    }
 
     // The token API endpoint
     const cognitoTokenExchangeUrl = new URL('/oauth2/token/', baseUrl);
@@ -71,8 +73,12 @@ export async function getTokensFromCognito(options: TokenOptions): Promise<Token
     };
 
     // Add the code or refresh token to the body object depending on the options
-    if (options.code) bodyObj.code = options.code;
-    if (options.refreshToken) bodyObj.refresh_token = options.refreshToken;
+    if (options.code) {
+        bodyObj.code = options.code;
+    }
+    if (options.refreshToken) {
+        bodyObj.refresh_token = options.refreshToken;
+    }
 
     // Serialize the body object to URL-encoded form data
     const body = new URLSearchParams(

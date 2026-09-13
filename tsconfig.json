@@ -10,13 +10,18 @@
         // tsc is the single source of truth for type errors: this lets ts-jest
         // transpile without re-checking types that `npm run typecheck` already checked.
         "isolatedModules": true,
+        "verbatimModuleSyntax": true,
+        "erasableSyntaxOnly": true,
         "types": ["node", "jest"],
         "forceConsistentCasingInFileNames": true,
         "noFallthroughCasesInSwitch": true,
         "noImplicitOverride": true,
         "noImplicitReturns": true,
         "noUnusedLocals": true,
-        "noUnusedParameters": true
+        "noUnusedParameters": true,
+        "noUncheckedIndexedAccess": true,
+        "exactOptionalPropertyTypes": true,
+        "noUncheckedSideEffectImports": true
     },
     "include": ["src/**/*"],
     "exclude": ["node_modules", ".aws-sam"]

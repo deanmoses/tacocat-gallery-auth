@@ -10,6 +10,7 @@ import eslintPluginPrettier from 'eslint-plugin-prettier/recommended';
 export default defineConfig(
     eslint.configs.recommended,
     tseslint.configs.strictTypeChecked,
+    tseslint.configs.stylisticTypeChecked,
     eslintConfigPrettier,
     eslintPluginPrettier,
     {
@@ -42,32 +43,20 @@ export default defineConfig(
         },
     },
     {
-        // Type-aware rule severities. Scoped to TypeScript: applying them
-        // globally would re-enable typed linting on the JS/MJS tooling above,
-        // which has no TypeScript program behind it.
+        rules: {
+            curly: 'error',
+            eqeqeq: 'error',
+        },
+    },
+    {
+        // Scoped to TypeScript: applying these globally would re-enable typed
+        // linting on the JS/MJS tooling above, which has no TypeScript program
+        // behind it. strictTypeChecked already sets the rest at error.
         files: ['**/*.ts'],
         rules: {
-            // Type-aware rules that catch real defects: unhandled promises,
-            // thrown non-Errors that lose their stack trace in CloudWatch,
-            // and "[object Object]" landing in logs.
-            '@typescript-eslint/no-floating-promises': 'error',
-            '@typescript-eslint/only-throw-error': 'error',
-            '@typescript-eslint/await-thenable': 'error',
-            '@typescript-eslint/no-base-to-string': 'error',
-            '@typescript-eslint/no-unnecessary-type-assertion': 'error',
-            '@typescript-eslint/require-await': 'error',
-            '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
-            '@typescript-eslint/consistent-type-imports': 'error',
             '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-
-            // `any` leaking out of JSON.parse and response.json() boundaries:
-            // cast at the boundary to the type the parse is known to produce.
-            '@typescript-eslint/no-unsafe-assignment': 'error',
-            '@typescript-eslint/no-unsafe-argument': 'error',
-            '@typescript-eslint/no-unsafe-member-access': 'error',
-            '@typescript-eslint/no-unsafe-return': 'error',
-            '@typescript-eslint/no-unsafe-call': 'error',
-            '@typescript-eslint/no-unsafe-enum-comparison': 'error',
+            '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
+            '@typescript-eslint/switch-exhaustiveness-check': 'error',
         },
     },
 );

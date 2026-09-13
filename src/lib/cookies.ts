@@ -4,7 +4,9 @@
  * @returns cookie value or null if not found
  */
 export function getCookie(cookieHeader: string, name: string): string | null {
-    if (!cookieHeader) return null;
+    if (!cookieHeader) {
+        return null;
+    }
     const nameLenPlus = name.length + 1;
     return (
         cookieHeader
@@ -15,6 +17,6 @@ export function getCookie(cookieHeader: string, name: string): string | null {
             })
             .map((cookie) => {
                 return decodeURIComponent(cookie.substring(nameLenPlus));
-            })[0] || null
+            })[0] ?? null
     );
 }
