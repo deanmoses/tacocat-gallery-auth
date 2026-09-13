@@ -21,29 +21,45 @@ interface TokenPayload {
     client_secret: string;
     redirect_uri: string;
     code?: string;
+    code_verifier?: string;
     refresh_token?: string;
 }
 
 interface TokenOptionsCode {
     code: string;
+    codeVerifier: string;
     refreshToken?: never;
 }
 
 interface TokenOptionsRefresh {
     code?: never;
+    codeVerifier?: never;
     refreshToken: string;
 }
 
 type TokenOptions = TokenOptionsCode | TokenOptionsRefresh;
 
+/** Cognito's token endpoint answered with an error status */
+export class TokenExchangeError extends Error {
+    readonly status: number;
+
+    constructor(status: number, body: string) {
+        super(`Cognito token exchange failed (${status}): ${body}`);
+        this.name = 'TokenExchangeError';
+        this.status = status;
+    }
+}
+
 /**
  * This function retrieves authorization tokens from AWS Cognito.
  *
  * It can be used in two ways:
- * 1) Given a Cognito-provided one-time authorization code,
- *    retrieve both a short-lived access/id token and longer-living refresh token.
- * 2) Given a Cognito-provided longer-living refresh code,
- *    update the short-lived access/id token.
+ * 1) Given a Cognito-provided one-time authorization code and the PKCE verifier
+ *    minted when the login started, retrieve both a short-lived access/id token
+ *    and longer-living refresh token.
+ * 2) Given a Cognito-provided longer-living refresh token, update the short-lived
+ *    access/id token. When the user pool rotates refresh tokens, the response
+ *    also carries a new refresh token.
  *
  * @see https://docs.aws.amazon.com/cognito/latest/developerguide/token-endpoint.html
  */
@@ -75,6 +91,7 @@ export async function getTokensFromCognito(options: TokenOptions): Promise<Token
     // Add the code or refresh token to the body object depending on the options
     if (options.code) {
         bodyObj.code = options.code;
+        bodyObj.code_verifier = options.codeVerifier;
     }
     if (options.refreshToken) {
         bodyObj.refresh_token = options.refreshToken;
@@ -97,8 +114,7 @@ export async function getTokensFromCognito(options: TokenOptions): Promise<Token
     });
 
     if (!response.ok) {
-        const errorBody = await response.text();
-        throw new Error(`Cognito token exchange failed (${response.status}): ${errorBody}`);
+        throw new TokenExchangeError(response.status, await response.text());
     }
 
     return (await response.json()) as Tokens;
