@@ -41,7 +41,7 @@
         "format": "prettier --write .",
         "format:check": "prettier --check .",
         "watch": "sam sync",
-        "tail": "sam logs --include-traces --tail",
+        "tail": "sam logs --tail",
         "prepare": "husky"
     },
     "overrides": {

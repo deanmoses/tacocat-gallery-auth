@@ -28,10 +28,11 @@ sam deploy            # Deploy to dev/staging
 npm run watch         # sam sync --watch: deploy to dev/staging and redeploy on every change
 
 # Logs
-npm run tail          # sam logs --include-traces --tail: all function logs (one shared log group per stack)
+npm run tail          # sam logs --tail: all function logs (one shared log group per stack)
 sam logs -n AuthStatusFunction --tail   # Specific function logs
 aws logs tail tacocat-gallery-auth/dev --since 1h   # Same log group via the AWS CLI
 aws logs tail tacocat-gallery-auth/dev --since 1h --filter-pattern '{ $.message.event = "token_refresh_error" }'   # Filter on the structured event field
+aws logs tail tacocat-gallery-auth/dev/api-access --since 1h   # API Gateway access log, one JSON record per request
 ```
 
 Logs are kept 90 days in prod and 30 in dev.
@@ -88,11 +89,11 @@ Do NOT deploy to the prod environment. NEVER deploy to the prod environment. Tha
 
 - **template.yaml** - SAM/CloudFormation template defining all resources
 - **samconfig.toml** - Deployment configs for dev/prod environments
-- **infra/** - Account setup deployed by hand, not by CI: the IAM roles CI assumes (see `infra/README.md`)
+- **infra/** - Account setup deployed by hand, not by CI: the IAM roles CI assumes and the CloudWatch role API Gateway logs through (see `infra/README.md`)
 - Secrets stored in AWS Secrets Manager (Cognito client secret)
 - CORS restricted to gallery domain
 - Cookies: HttpOnly, Secure, SameSite=Strict
-- One CloudWatch log group per stack (`tacocat-gallery-auth/${Env}`) shared by every Lambda, so retention is set once, as code
+- One CloudWatch log group per stack (`tacocat-gallery-auth/${Env}`) shared by every Lambda, plus one for API Gateway access logs (`tacocat-gallery-auth/${Env}/api-access`), so retention is set as code
 
 ## Code Style
 

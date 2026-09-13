@@ -15,3 +15,13 @@ aws cloudformation deploy --template-file infra/github-oidc.yaml --stack-name ta
 The role ARNs are stable, so the workflows and `samconfig.toml` reference them directly. If you rename a role, update `.github/workflows/*.yml` and the `role_arn` entries in `samconfig.toml` to match.
 
 There are no AWS secrets in the GitHub repository. A workflow job gets a short-lived credential by presenting its OIDC token, and which role it may assume is decided by the token's `sub` claim: pull requests, runs on `main`, or the `prod` GitHub environment. The `prod` environment is configured in the repository settings to require a reviewer's approval and to deploy only from protected branches.
+
+## API Gateway logging role
+
+[apigateway-logging.yaml](apigateway-logging.yaml) registers the CloudWatch role API Gateway uses to write the access logs `template.yaml` enables. The role is an account setting, one per region, so it is deployed once here rather than by each stack. Until it exists, deploying the app stacks fails with `CloudWatch Logs role ARN must be set in account settings to enable logging`.
+
+Deploy or update with admin credentials:
+
+```bash
+aws cloudformation deploy --template-file infra/apigateway-logging.yaml --stack-name apigateway-cloudwatch-logs --capabilities CAPABILITY_NAMED_IAM
+```

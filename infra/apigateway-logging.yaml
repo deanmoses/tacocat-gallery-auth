@@ -1,0 +1,29 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+    Account-level CloudWatch role for API Gateway. API Gateway refuses to write
+    access or execution logs for any REST API in the region until a role is
+    registered in the account settings. Deployed by hand, once per region: the
+    setting is account-wide, so it can't live in a stack that exists twice (dev
+    and prod) without the two overwriting each other. See infra/README.md.
+
+Resources:
+    ApiGatewayCloudWatchRole:
+        Type: AWS::IAM::Role
+        Properties:
+            RoleName: apigateway-cloudwatch-logs
+            Description: Lets API Gateway push access and execution logs to CloudWatch
+            AssumeRolePolicyDocument:
+                Version: '2012-10-17'
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service: apigateway.amazonaws.com
+                      Action: sts:AssumeRole
+            ManagedPolicyArns:
+                - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+
+    # There is exactly one of these per account and region; this stack owns it
+    ApiGatewayAccount:
+        Type: AWS::ApiGateway::Account
+        Properties:
+            CloudWatchRoleArn: !GetAtt ApiGatewayCloudWatchRole.Arn
