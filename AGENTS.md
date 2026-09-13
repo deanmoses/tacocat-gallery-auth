@@ -2,9 +2,9 @@
 <!-- To regenerate, run `npm run agent-docs` -->
 <!-- Source content: docs/AGENTS.src.md -->
 
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to AI programming agents when working with code in this repository.
 
 ## Project Overview
 
