@@ -9,14 +9,39 @@ AWS Serverless authentication API for Tacocat Gallery using AWS Cognito. Provide
 ## Build & Development Commands
 
 ```bash
-# Run tests (Jest with ES modules)
-npm test
+# Testing and linting
+npm test              # unit tests
+npm run typecheck     # tsc
+npm run lint          # ESLint, check only (fails on violations)
+npm run lint:fix      # ESLint with auto-fix
+npm run format:check  # Prettier, check only
+npm run format        # Prettier with auto-fix
+npm run lint:md       # markdownlint
+npm run lint:cfn      # cfn-lint on template.yaml (via SAM CLI)
+npm run lint:shell    # shellcheck on the husky hook (requires shellcheck)
+npm run lint:actions  # actionlint on GitHub workflows (requires actionlint)
 
-# Watch mode - syncs changes to AWS
-npm run watch
+# Building and deploying
+sam build             # Build SAM application (see esbuild note below)
+sam deploy --no-execute-changeset  # Creates a changeset in AWS without executing it (uploads artifacts, needs credentials)
+sam deploy            # Deploy to dev/staging
+npm run watch         # sam sync --watch: deploy to dev/staging and redeploy on every change
 
-# Tail CloudWatch logs with traces
-npm run tail
+# Logs
+npm run tail          # sam logs --include-traces --tail: all function logs (one shared log group per stack)
+sam logs -n AuthStatusFunction --tail   # Specific function logs
+aws logs tail tacocat-gallery-auth/dev --since 1h   # Same log group via the AWS CLI
+aws logs tail tacocat-gallery-auth/dev --since 1h --filter-pattern '{ $.message.event = "token_refresh_error" }'   # Filter on the structured event field
+```
+
+Logs are kept 90 days in prod and 30 in dev.
+
+### esbuild
+
+`sam build` shells out to esbuild on the host. It is pinned as a devDependency, but SAM resolves `node_modules` relative to each `CodeUri`, so the pinned binary is found only via PATH -- a global esbuild (Homebrew, `npm i -g`) silently shadows it and builds with a different version. To use the pinned one:
+
+```bash
+PATH="$PWD/node_modules/.bin:$PATH" sam build
 ```
 
 ## Architecture
@@ -25,12 +50,12 @@ npm run tail
 
 ### Lambda Functions (src/handlers/)
 
-| Handler | Endpoint | Purpose |
-|---------|----------|---------|
-| `authStatus.ts` | GET / | Check auth status, auto-refresh tokens |
-| `redirectToCognito.ts` | GET /login | Redirect to Cognito hosted UI |
-| `loginCallback.ts` | GET /login_callback | Exchange auth code for tokens, set cookies |
-| `logout.ts` | GET /logout | Clear cookies, redirect to Cognito logout |
+| Handler                | Endpoint            | Purpose                                    |
+| ---------------------- | ------------------- | ------------------------------------------ |
+| `authStatus.ts`        | GET /               | Check auth status, auto-refresh tokens     |
+| `redirectToCognito.ts` | GET /login          | Redirect to Cognito hosted UI              |
+| `loginCallback.ts`     | GET /login_callback | Exchange auth code for tokens, set cookies |
+| `logout.ts`            | GET /logout         | Clear cookies, redirect to Cognito logout  |
 
 ### Shared Library (src/lib/)
 
@@ -50,35 +75,72 @@ Handlers are bundled with esbuild during `sam build`.
 
 ## Environments
 
-| Environment | Stack Name | Auth API | Gallery App |
-|-------------|------------|----------|-------------|
-| dev | tacocat-gallery-auth-dev | auth.staging-pix.tacocat.com | staging-pix.tacocat.com |
-| prod | tacocat-gallery-auth-prod | auth.pix.tacocat.com | pix.tacocat.com |
+| Environment | Stack Name                | Auth API                     | Gallery App             |
+| ----------- | ------------------------- | ---------------------------- | ----------------------- |
+| dev         | tacocat-gallery-auth-dev  | auth.staging-pix.tacocat.com | staging-pix.tacocat.com |
+| prod        | tacocat-gallery-auth-prod | auth.pix.tacocat.com         | pix.tacocat.com         |
 
 The staging site at `staging-pix.tacocat.com` uses the dev stack, and `pix.tacocat.com` uses prod. Both share the same Cognito user pool at `login.tacocat.com`, so your credentials work on both environments.
+
+Do NOT deploy to the prod environment. NEVER deploy to the prod environment. That goes through a GitHub Actions CI/CD process.
 
 ## Infrastructure
 
 - **template.yaml** - SAM/CloudFormation template defining all resources
+- **samconfig.toml** - Deployment configs for dev/prod environments
+- **infra/** - Account setup deployed by hand, not by CI: the IAM roles CI assumes (see `infra/README.md`)
 - Secrets stored in AWS Secrets Manager (Cognito client secret)
 - CORS restricted to gallery domain
 - Cookies: HttpOnly, Secure, SameSite=Strict
+- One CloudWatch log group per stack (`tacocat-gallery-auth/${Env}`) shared by every Lambda, so retention is set once, as code
+
+## Code Style
+
+Prettier (see `.prettierrc.js`): 4-space indent, single quotes, 120 char width, trailing commas. `template.yaml` and `infra/*.yaml` are excluded: CloudFormation convention is 2-space indent, and cfn-lint owns their correctness.
+
+### Comments
+
+Comments exist ONLY to explain what the code cannot. Never restate the code. See `docs/CodeComments.md`.
+
+- **No planning ephemera.** Never reference plan docs (`/docs/plans/`, `~/.claude/plans/`) or phase/step labels like "PRE3", "REF1", "phase 2". Future readers have no access to these and no idea what they meant. Describe the actual rationale instead.
+- **No opposition to prior state.** Don't write "This does NOT do X" or "Deliberately not derived from Y" - no future reader knows about X. Exceptions, where prior state is load-bearing: regression tests, and changes a naive reader would plausibly revert.
+- **Don't name consumers.** "Used by Z" is instant doc rot.
+- **Don't restate the signature.** In strict-mode TypeScript, `/** Returns true if the path is a valid album path */` above `isValidAlbumPath(path: string): boolean` adds nothing.
+- **Don't repeat project-wide conventions in every file.** The structured logging format is documented here; it does not belong as a banner comment in each handler.
+- **Don't justify verbosity by ratio.** "It matches the doc-to-code ratio of the rest of the project" is not a defense. Write tight, just-enough comments.
+
+### Don't wrap Markdown
+
+Never hard-wrap prose in Markdown. Write each paragraph and list item as one long line and let the viewer soft-wrap it to its own width; wrapping at ~80 columns turns into choppy short lines on a narrow screen. Tables, code blocks and YAML frontmatter keep their own line structure.
+
+## Logging
+
+Structured, so Logs Insights can query it:
+
+```typescript
+console.info({ event: 'token_refresh_success' });
+console.error({ event: 'token_refresh_error', error: errorMessage });
+```
+
+Pass one plain object with a snake_case `event` field plus whatever context is relevant. Don't `JSON.stringify` it or pass extra arguments; the Lambda JSON log format nests a single object argument as real JSON under `message`, but a string gets escaped into `message` and can't be queried without `parse`.
+
+## Testing
+
+Unit tests live next to the code as `*.test.ts`. Test event payloads in `events/` directory for local Lambda invocation testing.
 
 ## CI/CD
 
 - **gh CLI**: Use the `gh` CLI tool for GitHub operations.
 - **Branch protection**: The `main` branch is protected. All changes require a pull request.
-- **Pre-commit hooks**: Husky runs lint, typecheck, tests, and gitleaks (secret scanning) on commit.
-- **CI workflow**: On PR and push to main, runs lint, type check, unit tests, and SAM build. On push to main, also deploys to staging.
-- **Production deploy**: Manual workflow dispatch from GitHub Actions. Runs tests, deploys to prod, creates a release tag (YYYYvN format), and generates release notes.
-
-## Testing
-
-Test event payloads in `events/` directory for local Lambda invocation testing.
+- **Pre-commit hooks**: Husky runs the same checks as CI (see `.husky/pre-commit`). Tools not installed locally are skipped with a warning; CI enforces them regardless.
+- **CI workflow**: On PR and push to main, runs all lint and test checks plus a SAM build and a dry-run changeset against dev (see `.github/workflows/`). On push to main, also deploys to staging.
+- **Production deploy**: Manual workflow dispatch from GitHub Actions. Runs the checks, waits for approval in the `prod` GitHub environment, deploys to prod, creates a release tag (YYYYvN format), and generates release notes.
+- **CI credentials**: jobs assume IAM roles via GitHub OIDC, see `infra/README.md`.
 
 ## Branch, Commit and PR Types
 
 Use these types for branch names, commit messages, and PR titles:
+
 - `feat`: User-facing features or behavior changes (must change production code)
 - `fix`: Bug fixes (must change production code)
 - `docs`: Documentation only
@@ -90,6 +152,7 @@ Use these types for branch names, commit messages, and PR titles:
 ## Branch Naming
 
 Use `type/short-description`:
+
 ```text
 feat/search-pagination
 fix/year-search-bug
@@ -105,10 +168,12 @@ Use [Conventional Commits](https://www.conventionalcommits.org/):
 
 [optional body]
 ```
+
 - **Scopes:** Optional. Use when it adds clarity (e.g., `auth`, `tokens`, `cookies`).
 - **Breaking changes:** Use `!` suffix: `feat!: remove deprecated endpoint`
 
 **Examples:**
+
 ```text
 feat(auth): add token refresh on expired id_token
 fix(cookies): handle URL-encoded values
@@ -121,14 +186,17 @@ docs: update API documentation
 **PR titles:** Use conventional commit format, same as commit messages.
 
 **PR descriptions:**
+
 ```markdown
 ## Summary
+
 One sentence describing the overall change.
 
 - Optional supporting details
 - If needed
 
 ## Test plan
+
 - [ ] How to verify it works
 ```
 
