@@ -2,3 +2,5 @@ node_modules
 
 # SAM default build folder
 .aws-sam/
+# Jest coverage output
+coverage/

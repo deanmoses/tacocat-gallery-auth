@@ -1,13 +1,30 @@
+#!/usr/bin/env sh
 set -e
 
-# Lint, typecheck, and test
-npm run lint
-npm run typecheck
-npm test
-
 # Scan for secrets (requires installing gitleaks)
-if command -v gitleaks &> /dev/null; then
+if command -v gitleaks >/dev/null 2>&1; then
     gitleaks protect --staged --no-banner
 else
     echo "Warning: gitleaks not installed, skipping secret scan"
 fi
+
+# Shell and GitHub Actions linting. Both are enforced in CI; these are just an
+# early warning for devs who have the tools installed.
+if command -v shellcheck >/dev/null 2>&1; then
+    shellcheck .husky/pre-commit
+else
+    echo "Warning: shellcheck not installed, skipping shell lint"
+fi
+
+if command -v actionlint >/dev/null 2>&1; then
+    actionlint
+else
+    echo "Warning: actionlint not installed, skipping GitHub Actions lint"
+fi
+
+# Format and lint staged files only
+lint-staged
+
+# Type check and unit tests
+npm run typecheck
+npm test

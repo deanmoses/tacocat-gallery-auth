@@ -19,10 +19,10 @@ import { getLoginUrl } from '../lib/authUriHelpers';
  */
 export const handler = (_event: APIGatewayProxyEvent): APIGatewayProxyResult => {
     const loginUrl = getLoginUrl();
-    console.log(JSON.stringify({ event: 'login_redirect', loginUrl }));
+    console.info({ event: 'login_redirect', loginUrl });
     return {
         statusCode: 302,
         headers: { Location: loginUrl },
-        body: ''
+        body: '',
     };
-}
+};

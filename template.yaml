@@ -10,7 +10,7 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: Tacocat gallery authentication API
 
 # -----------------------------------------------------------------------------
-# This file is written in SAM syntax, and gets transfomed and expanded into a
+# This file is written in SAM syntax, and gets transformed and expanded into a
 # CloudFormation template.  The CloudFormation template is what actually gets
 # deployed.  The main point is that SAM syntax is much simpler, with a lot less
 # boilerplate around declaring resources like Lambda functions and their
@@ -57,6 +57,12 @@ Parameters:
     Type: String
     Default: /
 
+# -----------------------------------------------------------------------------
+# Conditions
+# -----------------------------------------------------------------------------
+Conditions:
+  IsProd: !Equals [!Ref Env, prod]
+
 # ------------------------------------------------------------------------------
 # Configuration inheritable by all Lambda functions and other types of Resources
 # ------------------------------------------------------------------------------
@@ -65,18 +71,40 @@ Globals:
     Runtime: nodejs24.x
     Architectures:
       - arm64
-    MemorySize: 128
+    # MemorySize is how Lambda sells vCPU -- 1769MB is one full vCPU, and it scales
+    # linearly below that. The 128MB default is ~0.07 vCPU, which throttles init and
+    # request handling alike. 1024MB (~0.6 vCPU) is the floor for anything doing real
+    # work. Billing is GB-seconds, so raising memory is close to free where duration
+    # falls proportionally -- but that stops holding once a function saturates its
+    # cores, so measure before raising it.
+    MemorySize: 1024
     Timeout: 10
     LoggingConfig:
       LogFormat: JSON
+      # One log group for the whole stack so retention is set once, as code.
+      # Lambda names each stream with the function name, so filtering still works.
+      LogGroup: !Ref AuthLogGroup
     Environment:
-        Variables:
-          GalleryAppDomain: !Ref GalleryAppDomain
+      Variables:
+        GalleryAppDomain: !Ref GalleryAppDomain
+        AuthAppDomain: !Sub auth.${GalleryAppDomain}
+        GalleryAppBaseURI: !Sub https://${GalleryAppDomain}
+        CognitoUserPoolID: !Ref CognitoUserPoolID
+        CognitoBaseURI: !Ref CognitoBaseURI
+        CognitoClientID: !Ref CognitoClientID
+        CognitoLogoutCallbackURI: !Ref CognitoLogoutCallbackURI
+        CognitoClientSecret: "{{resolve:secretsmanager:Tacocat/Gallery/Authentication:SecretString:TacocatGalleryCognitoClientSecret}}"
   Api:
     Name: !Sub Tacocat Gallery Auth API - ${Env}
     Domain:
       DomainName: !Sub auth.${GalleryAppDomain}
       CertificateArn: !Ref DomainCertificateArn
+    # Needs the account-level CloudWatch role for API Gateway, see infra/README.md.
+    # Every value is quoted: a variable API Gateway can't fill renders as "-",
+    # which is only valid JSON inside a string.
+    AccessLogSetting:
+      DestinationArn: !GetAtt ApiAccessLogGroup.Arn
+      Format: '{"requestId":"$context.requestId","requestTime":"$context.requestTime","ip":"$context.identity.sourceIp","userAgent":"$context.identity.userAgent","httpMethod":"$context.httpMethod","path":"$context.path","status":"$context.status","responseLength":"$context.responseLength","responseLatency":"$context.responseLatency","integrationStatus":"$context.integration.status","integrationLatency":"$context.integration.latency","errorMessage":"$context.error.message"}'
     Cors:
       AllowMethods: "'GET,OPTIONS'"
       AllowHeaders: "'content-type,origin'"
@@ -88,6 +116,26 @@ Globals:
 # -----------------------------------------------------------------------------
 Resources:
 
+  # CloudWatch log group shared by every Lambda in the stack
+  AuthLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: !If [IsProd, Retain, Delete] # don't delete in prod
+    UpdateReplacePolicy: !If [IsProd, Retain, Delete] # don't delete in prod
+    Properties:
+      LogGroupName: !Sub tacocat-gallery-auth/${Env} # Lambda refuses custom log groups that start with aws/
+      RetentionInDays: !If [IsProd, 90, 30]
+
+  # API Gateway access log, one record per request. Its own group rather than the
+  # Lambda one: API Gateway writes flat JSON, while Lambda nests records under
+  # `message`, and mixing the two shapes makes Logs Insights queries awkward.
+  ApiAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: !If [IsProd, Retain, Delete] # don't delete in prod
+    UpdateReplacePolicy: !If [IsProd, Retain, Delete] # don't delete in prod
+    Properties:
+      LogGroupName: !Sub tacocat-gallery-auth/${Env}/api-access
+      RetentionInDays: !If [IsProd, 90, 30]
+
   # Lambda for retrieving authentication status
   AuthStatusFunction:
     Type: AWS::Serverless::Function
@@ -96,15 +144,6 @@ Resources:
       Description: HTTP GET method to get authentication status
       Handler: authStatus.handler
       CodeUri: src/handlers/
-      Environment:
-        Variables:
-          AuthAppDomain: !Sub auth.${GalleryAppDomain}
-          GalleryAppBaseURI: !Sub https://${GalleryAppDomain}
-          CognitoUserPoolID: !Ref CognitoUserPoolID
-          CognitoBaseURI: !Ref CognitoBaseURI
-          CognitoClientID: !Ref CognitoClientID
-          CognitoLogoutCallbackURI: !Ref CognitoLogoutCallbackURI
-          CognitoClientSecret: "{{resolve:secretsmanager:Tacocat/Gallery/Authentication:SecretString:TacocatGalleryCognitoClientSecret}}"
       Events:
         Api:
           Type: Api
@@ -115,8 +154,7 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: es2022
-        Sourcemap: true
+        Target: node24
         EntryPoints:
           - authStatus.ts
 
@@ -128,15 +166,6 @@ Resources:
       Description: HTTP GET method for redirecting to the AWS Cognito login page
       Handler: redirectToCognito.handler
       CodeUri: src/handlers/
-      Environment:
-        Variables:
-          AuthAppDomain: !Sub auth.${GalleryAppDomain}
-          GalleryAppBaseURI: !Sub https://${GalleryAppDomain}
-          CognitoUserPoolID: !Ref CognitoUserPoolID
-          CognitoBaseURI: !Ref CognitoBaseURI
-          CognitoClientID: !Ref CognitoClientID
-          CognitoLogoutCallbackURI: !Ref CognitoLogoutCallbackURI
-          CognitoClientSecret: "{{resolve:secretsmanager:Tacocat/Gallery/Authentication:SecretString:TacocatGalleryCognitoClientSecret}}"
       Events:
         Api:
           Type: Api
@@ -147,8 +176,7 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: es2022
-        Sourcemap: true
+        Target: node24
         EntryPoints:
           - redirectToCognito.ts
 
@@ -160,15 +188,6 @@ Resources:
       Description: Handles the login callback from the AWS Cognito login page
       Handler: loginCallback.handler
       CodeUri: src/handlers/
-      Environment:
-        Variables:
-          AuthAppDomain: !Sub auth.${GalleryAppDomain}
-          GalleryAppBaseURI: !Sub https://${GalleryAppDomain}
-          CognitoUserPoolID: !Ref CognitoUserPoolID
-          CognitoBaseURI: !Ref CognitoBaseURI
-          CognitoClientID: !Ref CognitoClientID
-          CognitoLogoutCallbackURI: !Ref CognitoLogoutCallbackURI
-          CognitoClientSecret: "{{resolve:secretsmanager:Tacocat/Gallery/Authentication:SecretString:TacocatGalleryCognitoClientSecret}}"
       Events:
         Api:
           Type: Api
@@ -179,8 +198,7 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: es2022
-        Sourcemap: true
+        Target: node24
         EntryPoints:
           - loginCallback.ts
 
@@ -192,15 +210,6 @@ Resources:
       Description: Log the user out
       Handler: logout.handler
       CodeUri: src/handlers/
-      Environment:
-        Variables:
-          AuthAppDomain: !Sub auth.${GalleryAppDomain}
-          GalleryAppBaseURI: !Sub https://${GalleryAppDomain}
-          CognitoUserPoolID: !Ref CognitoUserPoolID
-          CognitoBaseURI: !Ref CognitoBaseURI
-          CognitoClientID: !Ref CognitoClientID
-          CognitoLogoutCallbackURI: !Ref CognitoLogoutCallbackURI
-          CognitoClientSecret: "{{resolve:secretsmanager:Tacocat/Gallery/Authentication:SecretString:TacocatGalleryCognitoClientSecret}}"
       Events:
         Api:
           Type: Api
@@ -211,8 +220,7 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: es2022
-        Sourcemap: true
+        Target: node24
         EntryPoints:
           - logout.ts
 

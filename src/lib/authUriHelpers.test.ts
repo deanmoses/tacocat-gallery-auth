@@ -5,7 +5,7 @@ jest.mock('./env', () => ({
     COGNITO_BASE_URI: 'https://mock-pool.auth.us-east-1.amazoncognito.com',
     COGNITO_CLIENT_ID: 'mock-client-id',
     COGNITO_LOGIN_CALLBACK_URI: '/login_callback',
-    COGNITO_LOGOUT_CALLBACK_URI: '/'
+    COGNITO_LOGOUT_CALLBACK_URI: '/',
 }));
 
 import {
@@ -14,7 +14,7 @@ import {
     getLoginUrl,
     getLoginCallbackUrl,
     getLogoutUrl,
-    getLogoutCallbackUrl
+    getLogoutCallbackUrl,
 } from './authUriHelpers';
 
 describe('getAuthAppBaseUrl', () => {

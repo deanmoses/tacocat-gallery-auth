@@ -1,0 +1,5 @@
+{
+    "*.{json,yml,yaml}": "prettier --write --ignore-unknown",
+    "*.{js,mjs,ts}": "eslint --fix",
+    "*.md": ["prettier --write", "markdownlint-cli2"]
+}

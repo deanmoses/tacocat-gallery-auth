@@ -15,6 +15,7 @@
  */
 
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import type { Tokens } from '../lib/authTokens';
 import { getTokensFromCognito } from '../lib/authTokens';
 import { getGalleryAppBaseUrl } from '../lib/authUriHelpers';
 
@@ -23,30 +24,30 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const code = event.queryStringParameters?.code;
 
     if (!code) {
-		throw new Error('No Cognito code query parameter provided');
-	}
+        throw new Error('No Cognito code query parameter provided');
+    }
 
     // Exchange the one-time code for a set of longer-lived auth tokens
-	// id_token: short lived
-	// refresh_token: longer lived
-	let tokens = null;
-	try {
-		tokens = await getTokensFromCognito({ code });
-	} catch (e) {
-        throw new Error(`Token exchange failed: ${e instanceof Error ? e.message : String(e)}`);
-	}
+    // id_token: short lived
+    // refresh_token: longer lived
+    let tokens: Tokens;
+    try {
+        tokens = await getTokensFromCognito({ code });
+    } catch (e) {
+        throw new Error(`Token exchange failed: ${e instanceof Error ? e.message : String(e)}`, { cause: e });
+    }
 
-	// Store the id token and the refresh token in cookies
-	if (tokens.access_token && tokens.id_token && tokens.refresh_token) {
+    // Store the id token and the refresh token in cookies
+    if (tokens.access_token && tokens.id_token && tokens.refresh_token) {
         // Set the expire time for the id token
-		const idExpires = new Date();
-		idExpires.setSeconds(idExpires.getSeconds() + tokens.expires_in);
+        const idExpires = new Date();
+        idExpires.setSeconds(idExpires.getSeconds() + tokens.expires_in);
 
-		// Set the expire time for the refresh token
-		// This is set in the Cognito console to 30 days by default so we'll use 29 days here.
-		// When the refresh token expires, the user will have to log in again.
-		const refreshExpire = new Date();
-		refreshExpire.setDate(refreshExpire.getDate() + 29);
+        // Set the expire time for the refresh token
+        // This is set in the Cognito console to 30 days by default so we'll use 29 days here.
+        // When the refresh token expires, the user will have to log in again.
+        const refreshExpire = new Date();
+        refreshExpire.setDate(refreshExpire.getDate() + 29);
 
         // Create the cookie headers
         const multiValueHeaders = {
@@ -62,27 +63,26 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
                 // and only call the authentication back end if there's an actual chance
                 // the user might be authenticated, I need to set another cookie with
                 // no sensitive information.
-                `was_authenticated=Authenticated at ${Date.now()}; Secure; Domain=tacocat.com; SameSite=Strict; Path=/; Expires=${idExpires.toUTCString()}`
-            ]
-        }
+                `was_authenticated=Authenticated at ${Date.now()}; Secure; Domain=tacocat.com; SameSite=Strict; Path=/; Expires=${idExpires.toUTCString()}`,
+            ],
+        };
 
-		console.info(JSON.stringify({ event: 'login_success', idTokenExpires: idExpires.toISOString() }));
+        console.info({ event: 'login_success', idTokenExpires: idExpires.toISOString() });
 
-		// Redirect to the home page of the Tacocat gallery web app
+        // Redirect to the home page of the Tacocat gallery web app
         return {
             statusCode: 307,
             multiValueHeaders,
             headers: { Location: getGalleryAppBaseUrl() },
-            body: ''
+            body: '',
         };
-
-	} else {
+    } else {
         // If the response from Cognito doesn't have the stuff we expect,
         // log the full response for debugging but return a generic error to the client
-        console.error(JSON.stringify({ event: 'login_callback_error', error: 'Unexpected token response', tokens }));
+        console.error({ event: 'login_callback_error', error: 'Unexpected token response', tokens });
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: 'Authentication failed. Please try again.' })
-        }
-	}
-}
+            body: JSON.stringify({ error: 'Authentication failed. Please try again.' }),
+        };
+    }
+};

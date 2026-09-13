@@ -3,56 +3,110 @@ name: CI
 on:
     push:
         branches: [main]
-        paths-ignore:
-            - '*.md'
-            - 'LICENSE'
-            - '.gitignore'
-            - 'docs/**'
     pull_request:
         branches: [main]
-        paths-ignore:
-            - '*.md'
-            - 'LICENSE'
-            - '.gitignore'
-            - 'docs/**'
 
 concurrency:
     group: ${{ github.workflow }}-${{ github.ref }}
     cancel-in-progress: true
 
+permissions:
+    contents: read
+
 env:
     HUSKY: 0 # Skip git hooks in CI
 
 jobs:
+    # Detect if production code changed (vs non-code stuff like docs). A path
+    # filter on the workflow trigger can't do this: a skipped workflow leaves
+    # the required status check pending forever, blocking docs-only PRs.
+    detect-code-changes:
+        runs-on: ubuntu-latest
+        permissions:
+            pull-requests: read
+        outputs:
+            code_changed: ${{ steps.filter.outputs.code }}
+        steps:
+            - uses: actions/checkout@v7
+              with:
+                  fetch-depth: 0 # Required for paths-filter to compare commits on push
+            - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+              id: filter
+              with:
+                  predicate-quantifier: 'every'
+                  # Keep in step with what lint-docs.yml covers
+                  filters: |
+                      code:
+                        - '**'
+                        - '!**/*.md'
+                        - '!.markdownlint.json'
+                        - '!.markdownlint-cli2.jsonc'
+                        - '!LICENSE'
+                        - '!.gitignore'
+                        - '!docs/**'
+
+    # Only runs if code files changed
     build-and-validate:
+        needs: detect-code-changes
+        if: ${{ needs.detect-code-changes.outputs.code_changed == 'true' }}
         uses: ./.github/workflows/build-and-validate.yml
-        secrets: inherit
+        permissions:
+            contents: read
+            id-token: write # a called workflow can hold at most the permissions the caller grants
+
+    # Branch protection requires this job, not build-and-validate, to pass before merging
+    # Passes if: (1) no code changes (skip is OK), or (2) build-and-validate succeeded
+    # Fails if: code changes and build-and-validate failed/cancelled
+    merge-ok:
+        needs: [detect-code-changes, build-and-validate]
+        if: always()
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check required jobs
+              run: |
+                  if [[ "${{ needs.detect-code-changes.result }}" != "success" ]]; then
+                      echo "✗ detect-code-changes failed (result: ${{ needs.detect-code-changes.result }})"
+                      exit 1
+                  fi
+                  if [[ "${{ needs.detect-code-changes.outputs.code_changed }}" != "true" ]]; then
+                      echo "✓ No code changes - build was skipped appropriately"
+                      exit 0
+                  fi
+                  if [[ "${{ needs.build-and-validate.result }}" != "success" ]]; then
+                      echo "✗ Code changes detected but build did not succeed (result: ${{ needs.build-and-validate.result }})"
+                      exit 1
+                  fi
+                  echo "✓ Code changes detected and build passed"
 
     deploy:
         needs: build-and-validate
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         runs-on: ubuntu-latest
         timeout-minutes: 20
+        permissions:
+            contents: read
+            id-token: write # lets the job request a GitHub OIDC token to assume an AWS role
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@v7
 
             - name: Setup Node.js
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v7
               with:
-                  node-version: '24'
+                  node-version-file: .nvmrc
                   cache: 'npm'
-
-            # SAM's esbuild bundler looks for esbuild in CodeUri dir (src/handlers/),
-            # not root node_modules. Global install is simplest workaround.
-            - name: Install esbuild globally
-              run: npm install -g esbuild
 
             - name: Install dependencies
               run: npm ci
 
+            - name: Add esbuild to PATH
+              # esbuild is a devDependency, so package-lock.json pins the version.
+              # SAM resolves node_modules relative to each CodeUri rather than to
+              # the repo root, so the binary has to reach it via PATH.
+              run: echo "$GITHUB_WORKSPACE/node_modules/.bin" >> "$GITHUB_PATH"
+
             - name: Setup AWS SAM CLI
-              uses: aws-actions/setup-sam@v2
+              uses: aws-actions/setup-sam@89ddb14d60e682855e3fea4be85b3c56485de310 # v3
               with:
                   use-installer: true
 
@@ -60,10 +114,12 @@ jobs:
               run: sam build
 
             - name: Configure AWS credentials
-              uses: aws-actions/configure-aws-credentials@v4
+              # No stored keys: the job trades its GitHub OIDC token for a short-lived AWS role.
+              # Roles are defined in infra/github-oidc.yaml.
+              uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c # v6.2.4
               with:
-                  aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-                  aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                  role-to-assume: arn:aws:iam::010410881828:role/tacocat-gallery-auth-cicd-github-main
+                  role-session-name: github-${{ github.run_id }}
                   aws-region: us-east-1
 
             - name: Deploy to staging

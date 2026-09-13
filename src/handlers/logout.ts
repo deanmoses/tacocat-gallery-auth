@@ -22,9 +22,9 @@ export const handler = (event: APIGatewayProxyEvent): APIGatewayProxyResult => {
             'Set-Cookie': [
                 `id_token=; HttpOnly; Domain=tacocat.com; SameSite=Strict; Path=/; Expires=${expires}`,
                 `refresh_token=; HttpOnly; Domain=tacocat.com; SameSite=Strict; Path=/; Expires=${expires}`,
-                `was_authenticated=; Domain=tacocat.com; SameSite=Strict; Path=/; Expires=${expires}`
-            ]
+                `was_authenticated=; Domain=tacocat.com; SameSite=Strict; Path=/; Expires=${expires}`,
+            ],
         },
-        body: ''
+        body: '',
     };
-}
+};

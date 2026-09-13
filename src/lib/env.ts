@@ -1,30 +1,30 @@
 // Required environment variables
 const requiredEnvVars = [
-	'CognitoBaseURI',
-	'CognitoLogoutCallbackURI',
-	'CognitoUserPoolID',
-	'CognitoClientID',
-	'CognitoClientSecret',
-	'GalleryAppBaseURI',
-	'AuthAppDomain',
-	'GalleryAppDomain'
+    'CognitoBaseURI',
+    'CognitoLogoutCallbackURI',
+    'CognitoUserPoolID',
+    'CognitoClientID',
+    'CognitoClientSecret',
+    'GalleryAppBaseURI',
+    'AuthAppDomain',
+    'GalleryAppDomain',
 ] as const;
 
 type RequiredEnvVar = (typeof requiredEnvVars)[number];
 
 // Validate all required environment variables at startup
-const missing = requiredEnvVars.filter(name => !process.env[name]);
+const missing = requiredEnvVars.filter((name) => !process.env[name]);
 if (missing.length > 0) {
-	throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
 }
 
 // Helper to get validated env var (we know it exists after validation above)
 function getEnv(name: RequiredEnvVar): string {
-	const value = process.env[name];
-	if (!value) {
-		throw new Error(`Environment variable ${name} is not set`);
-	}
-	return value;
+    const value = process.env[name];
+    if (!value) {
+        throw new Error(`Environment variable ${name} is not set`);
+    }
+    return value;
 }
 
 // Export validated environment variables

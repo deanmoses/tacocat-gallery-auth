@@ -13,6 +13,7 @@ cached = true
 parallel = true
 
 [default.sync.parameters]
+role_arn = "arn:aws:iam::010410881828:role/tacocat-gallery-auth-cicd-cloudformation"
 watch = true
 
 [default.local_start_api.parameters]
@@ -22,6 +23,7 @@ warm_containers = "EAGER"
 warm_containers = "EAGER"
 
 [default.deploy.parameters]
+role_arn = "arn:aws:iam::010410881828:role/tacocat-gallery-auth-cicd-cloudformation" # CloudFormation service role that creates the resources, see infra/github-oidc.yaml
 s3_prefix = "tacocat-gallery-auth/dev"
 region = "us-east-1"
 resolve_s3 = true
@@ -54,6 +56,7 @@ resolve_s3 = true
 
 [prod.sync]
 [prod.sync.parameters]
+role_arn = "arn:aws:iam::010410881828:role/tacocat-gallery-auth-cicd-cloudformation"
 watch = false
 
 [prod.local_start_api.parameters]
@@ -64,6 +67,7 @@ warm_containers = "EAGER"
 
 
 [prod.deploy.parameters]
+role_arn = "arn:aws:iam::010410881828:role/tacocat-gallery-auth-cicd-cloudformation" # CloudFormation service role that creates the resources, see infra/github-oidc.yaml
 s3_prefix = "tacocat-gallery-auth/prod"
 region = "us-east-1"
 resolve_s3 = true
