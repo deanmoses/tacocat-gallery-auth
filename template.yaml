@@ -57,6 +57,12 @@ Parameters:
     Type: String
     Default: /
 
+# -----------------------------------------------------------------------------
+# Conditions
+# -----------------------------------------------------------------------------
+Conditions:
+  IsProd: !Equals [!Ref Env, prod]
+
 # ------------------------------------------------------------------------------
 # Configuration inheritable by all Lambda functions and other types of Resources
 # ------------------------------------------------------------------------------
@@ -69,6 +75,9 @@ Globals:
     Timeout: 10
     LoggingConfig:
       LogFormat: JSON
+      # One log group for the whole stack so retention is set once, as code.
+      # Lambda names each stream with the function name, so filtering still works.
+      LogGroup: !Ref AuthLogGroup
     Environment:
         Variables:
           GalleryAppDomain: !Ref GalleryAppDomain
@@ -87,6 +96,15 @@ Globals:
 # Resources are the actual AWS systems that will be provisioned
 # -----------------------------------------------------------------------------
 Resources:
+
+  # CloudWatch log group shared by every Lambda in the stack
+  AuthLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: !If [IsProd, Retain, Delete] # don't delete in prod
+    UpdateReplacePolicy: !If [IsProd, Retain, Delete] # don't delete in prod
+    Properties:
+      LogGroupName: !Sub tacocat-gallery-auth/${Env} # Lambda refuses custom log groups that start with aws/
+      RetentionInDays: !If [IsProd, 90, 30]
 
   # Lambda for retrieving authentication status
   AuthStatusFunction:
@@ -115,7 +133,7 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: es2022
+        Target: node24
         Sourcemap: true
         EntryPoints:
           - authStatus.ts
@@ -147,7 +165,7 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: es2022
+        Target: node24
         Sourcemap: true
         EntryPoints:
           - redirectToCognito.ts
@@ -179,7 +197,7 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: es2022
+        Target: node24
         Sourcemap: true
         EntryPoints:
           - loginCallback.ts
@@ -211,7 +229,7 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: es2022
+        Target: node24
         Sourcemap: true
         EntryPoints:
           - logout.ts
