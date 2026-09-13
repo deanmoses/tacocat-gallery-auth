@@ -2,7 +2,11 @@ name: Build and Validate
 
 on:
     workflow_call:
-        # Makes this workflow callable from other workflows
+        inputs:
+            dry-run-changeset:
+                description: Create, but never execute, a change set against the dev stack to prove the template deploys
+                type: boolean
+                default: true
 
 permissions:
     contents: read
@@ -51,12 +55,6 @@ jobs:
             - name: Install dependencies
               run: npm ci
 
-            - name: Add esbuild to PATH
-              # esbuild is a devDependency, so package-lock.json pins the version.
-              # SAM resolves node_modules relative to each CodeUri rather than to
-              # the repo root, so the binary has to reach it via PATH.
-              run: echo "$GITHUB_WORKSPACE/node_modules/.bin" >> "$GITHUB_PATH"
-
             - name: Lint
               run: npm run lint
 
@@ -101,9 +99,11 @@ jobs:
               run: npm run lint:cfn
 
             - name: SAM build
-              run: sam build
+              # Through npm so the esbuild that package-lock.json pins is first on PATH
+              run: npm run build
 
             - name: Configure AWS credentials
+              if: ${{ inputs.dry-run-changeset }}
               # No stored keys: the job trades its GitHub OIDC token for a short-lived AWS role.
               # Pull requests get a role that can only create (never execute) a change set on dev;
               # runs on main get the deploy role. Roles are defined in infra/github-oidc.yaml.
@@ -114,6 +114,7 @@ jobs:
                   aws-region: us-east-1
 
             - name: Validate changeset (dry-run)
+              if: ${{ inputs.dry-run-changeset }}
               run: |
                   set -o pipefail
                   sam deploy --no-execute-changeset --no-fail-on-empty-changeset 2>&1 | tee /tmp/changeset.log

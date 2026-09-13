@@ -43,6 +43,7 @@
         "format": "prettier --write .",
         "format:check": "prettier --check .",
         "agent-docs": "node scripts/build-agent-docs.mjs",
+        "build": "sam build",
         "watch": "sam sync",
         "tail": "sam logs --tail",
         "prepare": "husky"

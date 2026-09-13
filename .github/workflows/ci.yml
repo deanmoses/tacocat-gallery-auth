@@ -99,19 +99,14 @@ jobs:
             - name: Install dependencies
               run: npm ci
 
-            - name: Add esbuild to PATH
-              # esbuild is a devDependency, so package-lock.json pins the version.
-              # SAM resolves node_modules relative to each CodeUri rather than to
-              # the repo root, so the binary has to reach it via PATH.
-              run: echo "$GITHUB_WORKSPACE/node_modules/.bin" >> "$GITHUB_PATH"
-
             - name: Setup AWS SAM CLI
               uses: aws-actions/setup-sam@89ddb14d60e682855e3fea4be85b3c56485de310 # v3
               with:
                   use-installer: true
 
             - name: SAM build
-              run: sam build
+              # Through npm so the esbuild that package-lock.json pins is first on PATH
+              run: npm run build
 
             - name: Configure AWS credentials
               # No stored keys: the job trades its GitHub OIDC token for a short-lived AWS role.
