@@ -71,7 +71,13 @@ Globals:
     Runtime: nodejs24.x
     Architectures:
       - arm64
-    MemorySize: 128
+    # MemorySize is how Lambda sells vCPU -- 1769MB is one full vCPU, and it scales
+    # linearly below that. The 128MB default is ~0.07 vCPU, which throttles init and
+    # request handling alike. 1024MB (~0.6 vCPU) is the floor for anything doing real
+    # work. Billing is GB-seconds, so raising memory is close to free where duration
+    # falls proportionally -- but that stops holding once a function saturates its
+    # cores, so measure before raising it.
+    MemorySize: 1024
     Timeout: 10
     LoggingConfig:
       LogFormat: JSON
