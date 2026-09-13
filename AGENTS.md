@@ -150,7 +150,7 @@ Integration tests in `src/test/integration/` make logged-out HTTPS requests to a
 - **Production deploy**: Manual workflow dispatch from GitHub Actions. Runs the checks, deploys to prod from the `prod` GitHub environment, creates a release tag (YYYYvN format), and generates release notes.
 - **CI credentials**: jobs assume IAM roles via GitHub OIDC, see `infra/README.md`.
 
-## Branch, Commit and PR Types
+## Branch, Commit and PR Conventions
 
 Use these types for branch names, commit messages, and PR titles:
 
@@ -162,17 +162,17 @@ Use these types for branch names, commit messages, and PR titles:
 - `test`: Adding or updating tests
 - `chore`: CI/CD, tooling, dependency bumps, configs (no production code)
 
-## Branch Naming
+### Branch Naming
 
 Use `type/short-description`:
 
 ```text
-feat/search-pagination
-fix/year-search-bug
+feat/pkce-state
+fix/cookie-url-encoding
 chore/pre-commit-hooks
 ```
 
-## Commit Messages
+### Commit Messages
 
 Use [Conventional Commits](https://www.conventionalcommits.org/):
 
@@ -194,7 +194,7 @@ chore: add husky pre-commit hooks
 docs: update API documentation
 ```
 
-## Pull Requests
+### Pull Requests
 
 **PR titles:** Use conventional commit format, same as commit messages.
 
