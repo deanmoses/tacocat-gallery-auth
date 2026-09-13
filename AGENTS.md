@@ -2,9 +2,9 @@
 <!-- To regenerate, run `npm run agent-docs` -->
 <!-- Source content: docs/AGENTS.src.md -->
 
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to AI programming agents when working with code in this repository.
 
 ## Project Overview
 
@@ -154,9 +154,80 @@ Integration tests in `src/test/integration/` make logged-out HTTPS requests to a
 - **Production deploy**: Manual workflow dispatch from GitHub Actions. Runs the checks, deploys to prod from the `prod` GitHub environment, creates a release tag (YYYYvN format), and generates release notes.
 - **CI credentials**: jobs assume IAM roles via GitHub OIDC, see `infra/README.md`.
 
-## Custom Skills
+## Branch, Commit and PR Conventions
 
-Use this project's `/branch`, `/commit` and `/pr` skills via the Skill tool rather than running git or gh by hand.
+Use these types for branch names, commit messages, and PR titles:
+
+- `feat`: User-facing features or behavior changes (must change production code)
+- `fix`: Bug fixes (must change production code)
+- `docs`: Documentation only
+- `style`: Code style/formatting (no logic changes)
+- `refactor`: Code restructuring without behavior change
+- `test`: Adding or updating tests
+- `chore`: CI/CD, tooling, dependency bumps, configs (no production code)
+
+### Branch Naming
+
+Use `type/short-description`:
+
+```text
+feat/pkce-state
+fix/cookie-url-encoding
+chore/pre-commit-hooks
+```
+
+### Commit Messages
+
+Use [Conventional Commits](https://www.conventionalcommits.org/):
+
+```text
+<type>(<scope>): <description>
+
+[optional body]
+```
+
+- **Scopes:** Optional. Use when it adds clarity (e.g., `auth`, `tokens`, `cookies`).
+- **Breaking changes:** Use `!` suffix: `feat!: remove deprecated endpoint`
+
+**Examples:**
+
+```text
+feat(auth): add token refresh on expired id_token
+fix(cookies): handle URL-encoded values
+chore: add husky pre-commit hooks
+docs: update API documentation
+```
+
+### Pull Requests
+
+**PR titles:** Use conventional commit format, same as commit messages.
+
+**PR descriptions:**
+
+```markdown
+## Summary
+
+One sentence describing the overall change.
+
+- Optional supporting details
+- If needed
+
+## Test plan
+
+- [ ] How to verify it works
+```
+
+### PR Labels
+
+Use labels on pull requests. Apply all labels that fit. Only use the following labels:
+
+- `enhancement` - User-facing features or improvements. Must change production code behavior.
+- `refactor` - Production code changes that don't alter behavior
+- `bug` - Fixes broken production code functionality
+- `test` - Changes to tests
+- `documentation` - Documentation changes
+
+**No label needed** for dependency bumps, CI/CD, tooling, or infrastructure changes - these go in "Other Changes" in release notes.
 
 ## AI Assistant Configuration
 
