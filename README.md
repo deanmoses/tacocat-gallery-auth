@@ -30,7 +30,7 @@ npm run tail      # Tail CloudWatch logs
 ## Deployment
 
 - Push to `main` → deploys to staging (`auth.staging-pix.tacocat.com`)
-- Manual workflow dispatch → deploys to prod (`auth.pix.tacocat.com`). The `prod` GitHub environment requires a reviewer, so open the run and click _Review deployments_ to let it proceed.
+- Manual workflow dispatch → deploys to prod (`auth.pix.tacocat.com`)
 
 CI never holds AWS keys. Each workflow job exchanges its GitHub OIDC token for a short-lived AWS role scoped to what that job does; see [infra/README.md](infra/README.md).
 
