@@ -124,3 +124,7 @@ jobs:
 
             - name: Deploy to staging
               run: sam deploy --no-confirm-changeset --no-fail-on-empty-changeset
+
+            - name: Integration tests against staging
+              # Logged-out requests to the API just deployed; needs no credentials
+              run: npm run test:integration

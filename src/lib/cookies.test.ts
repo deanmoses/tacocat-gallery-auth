@@ -1,4 +1,4 @@
-import { getCookie } from './cookies';
+import { getCookie, serializeCookie } from './cookies';
 
 describe('getCookie', () => {
     it('returns the value of an existing cookie', () => {
@@ -44,5 +44,35 @@ describe('getCookie', () => {
     it('handles cookies with equals signs in the value', () => {
         const header = 'token=abc=123=xyz';
         expect(getCookie(header, 'token')).toBe('abc=123=xyz');
+    });
+});
+
+describe('serializeCookie', () => {
+    it('emits just name=value with no options', () => {
+        expect(serializeCookie('a', 'b')).toBe('a=b');
+    });
+
+    it('emits every attribute', () => {
+        expect(
+            serializeCookie('id_token', 'tok', {
+                domain: 'example.com',
+                path: '/',
+                expires: new Date(Date.UTC(2030, 0, 2, 3, 4, 5)),
+                maxAge: 60,
+                httpOnly: true,
+                secure: true,
+                sameSite: 'Lax',
+            }),
+        ).toBe(
+            'id_token=tok; Domain=example.com; Path=/; Expires=Wed, 02 Jan 2030 03:04:05 GMT; Max-Age=60; HttpOnly; Secure; SameSite=Lax',
+        );
+    });
+
+    it('emits Max-Age=0', () => {
+        expect(serializeCookie('a', '', { maxAge: 0 })).toBe('a=; Max-Age=0');
+    });
+
+    it('omits false flags', () => {
+        expect(serializeCookie('a', 'b', { httpOnly: false, secure: false })).toBe('a=b');
     });
 });

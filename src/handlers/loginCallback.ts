@@ -16,15 +16,48 @@
 
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import type { Tokens } from '../lib/authTokens';
-import { getTokensFromCognito } from '../lib/authTokens';
+import { getTokensFromCognito, TokenExchangeError } from '../lib/authTokens';
 import { getGalleryAppBaseUrl } from '../lib/authUriHelpers';
+import {
+    OAUTH_STATE_COOKIE,
+    PKCE_VERIFIER_COOKIE,
+    clearLoginAttemptCookies,
+    idTokenCookie,
+    idTokenExpiry,
+    refreshTokenCookie,
+    wasAuthenticatedCookie,
+} from '../lib/authCookies';
+import { getCookie } from '../lib/cookies';
+import { secretsMatch } from '../lib/pkce';
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-    // Cognito passes a one-time authorization code via a query string parameter called `code`
-    const code = event.queryStringParameters?.code;
+    const query = event.queryStringParameters ?? {};
+    const cookies = event.headers.cookie ?? '';
 
-    if (!code) {
-        throw new Error('No Cognito code query parameter provided');
+    // Cognito reports a failed or abandoned sign-in as an error redirect
+    if (query.error) {
+        console.warn({ event: 'login_callback_denied', error: query.error, description: query.error_description });
+        return errorResponse(400, 'Sign-in was not completed. Please try again.');
+    }
+
+    // Cognito passes a one-time authorization code and echoes back our state
+    const { code, state } = query;
+    if (!code || !state) {
+        console.warn({ event: 'login_callback_error', error: 'Missing code or state query parameter' });
+        return errorResponse(400, 'Invalid sign-in response.');
+    }
+
+    // The secrets minted at /login. Without them the callback is either a
+    // forgery, a replay, or an attempt that outlived its cookies.
+    const expectedState = getCookie(cookies, OAUTH_STATE_COOKIE);
+    const codeVerifier = getCookie(cookies, PKCE_VERIFIER_COOKIE);
+    if (!expectedState || !codeVerifier) {
+        console.warn({ event: 'login_callback_error', error: 'No login attempt cookies' });
+        return errorResponse(400, 'Sign-in attempt expired. Please try again.');
+    }
+    if (!secretsMatch(state, expectedState)) {
+        console.warn({ event: 'login_callback_error', error: 'State mismatch' });
+        return errorResponse(400, 'Invalid sign-in response.');
     }
 
     // Exchange the one-time code for a set of longer-lived auth tokens
@@ -32,58 +65,50 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     // refresh_token: longer lived
     let tokens: Tokens;
     try {
-        tokens = await getTokensFromCognito({ code });
-    } catch (e) {
-        throw new Error(`Token exchange failed: ${e instanceof Error ? e.message : String(e)}`, { cause: e });
+        tokens = await getTokensFromCognito({ code, codeVerifier });
+    } catch (error) {
+        console.error({
+            event: 'login_callback_error',
+            error: error instanceof Error ? error.message : String(error),
+        });
+        // Cognito answers 400 when the code is expired, reused or forged,
+        // which is a client problem; anything else means Cognito is unwell.
+        return error instanceof TokenExchangeError && error.status === 400
+            ? errorResponse(400, 'Sign-in could not be completed. Please try again.')
+            : errorResponse(502, 'Sign-in service unavailable. Please try again later.');
     }
 
-    // Store the id token and the refresh token in cookies
-    if (tokens.access_token && tokens.id_token && tokens.refresh_token) {
-        // Set the expire time for the id token
-        const idExpires = new Date();
-        idExpires.setSeconds(idExpires.getSeconds() + tokens.expires_in);
-
-        // Set the expire time for the refresh token
-        // This is set in the Cognito console to 30 days by default so we'll use 29 days here.
-        // When the refresh token expires, the user will have to log in again.
-        const refreshExpire = new Date();
-        refreshExpire.setDate(refreshExpire.getDate() + 29);
-
-        // Create the cookie headers
-        const multiValueHeaders = {
-            'Set-Cookie': [
-                `id_token=${tokens.id_token}; HttpOnly; Secure; Domain=tacocat.com; SameSite=Strict; Path=/; Expires=${idExpires.toUTCString()}`,
-                `refresh_token=${tokens.refresh_token}; HttpOnly; Secure; Domain=tacocat.com; SameSite=Strict; Path=/; Expires=${refreshExpire.toUTCString()}`,
-                // Set another cookie that simply tells the front end we are dealing with
-                // a user that MIGHT be authenticatable.  This is an optimization:
-                // Cookies with secure info (like a session ID) should be set as
-                // HttpOnly, meaning they can only be accessed server-side and not by
-                // client scripts.  This prevents them from being stolen by malicious scripts.
-                // Therefore, if I want the client to be able to short-circuit the logic
-                // and only call the authentication back end if there's an actual chance
-                // the user might be authenticated, I need to set another cookie with
-                // no sensitive information.
-                `was_authenticated=Authenticated at ${Date.now()}; Secure; Domain=tacocat.com; SameSite=Strict; Path=/; Expires=${idExpires.toUTCString()}`,
-            ],
-        };
-
-        console.info({ event: 'login_success', idTokenExpires: idExpires.toISOString() });
-
-        // Redirect to the home page of the Tacocat gallery web app
-        return {
-            statusCode: 307,
-            multiValueHeaders,
-            headers: { Location: getGalleryAppBaseUrl() },
-            body: '',
-        };
-    } else {
+    if (!tokens.access_token || !tokens.id_token || !tokens.refresh_token) {
         // Name the missing fields rather than logging the response: a partial
         // response may still carry live tokens, which must not reach CloudWatch.
         const missing = (['access_token', 'id_token', 'refresh_token'] as const).filter((field) => !tokens[field]);
         console.error({ event: 'login_callback_error', error: 'Unexpected token response', missing });
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ error: 'Authentication failed. Please try again.' }),
-        };
+        return errorResponse(502, 'Authentication failed. Please try again.');
     }
+
+    const idExpires = idTokenExpiry(tokens.expires_in);
+    console.info({ event: 'login_success', idTokenExpires: idExpires.toISOString() });
+
+    // Redirect to the home page of the Tacocat gallery web app
+    return {
+        statusCode: 307,
+        headers: { Location: getGalleryAppBaseUrl() },
+        multiValueHeaders: {
+            'Set-Cookie': [
+                idTokenCookie(tokens.id_token, idExpires),
+                refreshTokenCookie(tokens.refresh_token),
+                wasAuthenticatedCookie(idExpires),
+                ...clearLoginAttemptCookies(),
+            ],
+        },
+        body: '',
+    };
 };
+
+function errorResponse(statusCode: number, message: string): APIGatewayProxyResult {
+    return {
+        statusCode,
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+        body: JSON.stringify({ error: message }),
+    };
+}

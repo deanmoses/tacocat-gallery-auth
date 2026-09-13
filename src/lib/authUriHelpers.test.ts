@@ -42,15 +42,18 @@ describe('getLogoutCallbackUrl', () => {
 });
 
 describe('getLoginUrl', () => {
-    it('returns the Cognito login URL with correct query params', () => {
-        const url = new URL(getLoginUrl());
+    it('returns the Cognito authorize URL with correct query params', () => {
+        const url = new URL(getLoginUrl({ state: 'the-state', codeChallenge: 'the-challenge' }));
 
         expect(url.origin).toBe('https://mock-pool.auth.us-east-1.amazoncognito.com');
-        expect(url.pathname).toBe('/login');
+        expect(url.pathname).toBe('/oauth2/authorize');
         expect(url.searchParams.get('response_type')).toBe('code');
         expect(url.searchParams.get('client_id')).toBe('mock-client-id');
         expect(url.searchParams.get('redirect_uri')).toBe('https://auth.no-such.domain.com/login_callback');
         expect(url.searchParams.get('scope')).toBe('email openid phone');
+        expect(url.searchParams.get('state')).toBe('the-state');
+        expect(url.searchParams.get('code_challenge')).toBe('the-challenge');
+        expect(url.searchParams.get('code_challenge_method')).toBe('S256');
     });
 });
 

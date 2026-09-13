@@ -6,27 +6,14 @@
 */
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { getLogoutUrl } from '../lib/authUriHelpers';
+import { clearAuthCookies } from '../lib/authCookies';
 
-export const handler = (event: APIGatewayProxyEvent): APIGatewayProxyResult => {
-    if (event.httpMethod !== 'GET') {
-        throw new Error(`I only accept GET method, but instead I got: ${event.httpMethod}`);
-    }
-
+export const handler = (_event: APIGatewayProxyEvent): APIGatewayProxyResult => {
     console.info({ event: 'logout' });
-
-    // delete the cookies by setting an expires date in the past
-    const expires = 'Thu, 01 Jan 1970 00:00:00 GMT';
-
     return {
         statusCode: 307,
         headers: { Location: getLogoutUrl() },
-        multiValueHeaders: {
-            'Set-Cookie': [
-                `id_token=; HttpOnly; Domain=tacocat.com; SameSite=Strict; Path=/; Expires=${expires}`,
-                `refresh_token=; HttpOnly; Domain=tacocat.com; SameSite=Strict; Path=/; Expires=${expires}`,
-                `was_authenticated=; Domain=tacocat.com; SameSite=Strict; Path=/; Expires=${expires}`,
-            ],
-        },
+        multiValueHeaders: { 'Set-Cookie': clearAuthCookies() },
         body: '',
     };
 };

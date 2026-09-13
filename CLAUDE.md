@@ -11,6 +11,7 @@ AWS Serverless authentication API for Tacocat Gallery using AWS Cognito. Provide
 ```bash
 # Testing and linting
 npm test              # unit tests
+npm run test:integration  # black-box tests against a deployed API, staging unless AUTH_API_URL says otherwise
 npm run typecheck     # tsc
 npm run lint          # ESLint, check only (fails on violations)
 npm run lint:fix      # ESLint with auto-fix
@@ -62,17 +63,19 @@ PATH="$PWD/node_modules/.bin:$PATH" sam build
 
 - **authTokens.ts** - Cognito token exchange (authorization_code and refresh_token grants)
 - **authUriHelpers.ts** - URL construction for Cognito endpoints
-- **cookies.ts** - Cookie parsing utilities
+- **authCookies.ts** - Names and attributes of every cookie the app sets, and how to clear them
+- **cookies.ts** - Cookie parsing and serialization
+- **pkce.ts** - PKCE verifier/challenge and OAuth `state` generation
 - **env.ts** - Environment variable validation and loading
 
 Handlers are bundled with esbuild during `sam build`.
 
 ### Token Flow
 
-1. User hits `/login` → redirected to Cognito-hosted UI
-2. After login, Cognito redirects to `/login_callback` with auth code
-3. Lambda exchanges code for tokens, stores in HttpOnly cookies
-4. Subsequent requests to `/` verify ID token, auto-refresh if expired using refresh token
+1. User hits `/login` → Lambda mints an OAuth `state` and a PKCE verifier, parks them in short-lived cookies scoped to `/login_callback`, and redirects to Cognito's `/oauth2/authorize` with the `state` and the S256 code challenge
+2. After login, Cognito redirects to `/login_callback` with the auth code and `state`
+3. Lambda checks `state` against the cookie, exchanges code plus verifier for tokens, stores them in HttpOnly cookies, and clears the login-attempt cookies
+4. Subsequent requests to `/` verify ID token, auto-refresh if expired using refresh token. If the user pool rotates refresh tokens, the rotated token replaces the cookie
 
 ## Environments
 
@@ -92,7 +95,7 @@ Do NOT deploy to the prod environment. NEVER deploy to the prod environment. Tha
 - **infra/** - Account setup deployed by hand, not by CI: the IAM roles CI assumes and the CloudWatch role API Gateway logs through (see `infra/README.md`)
 - Secrets stored in AWS Secrets Manager (Cognito client secret)
 - CORS restricted to gallery domain
-- Cookies: HttpOnly, Secure, SameSite=Strict
+- Cookies: HttpOnly, Secure, SameSite=Strict; the login-attempt cookies are SameSite=Lax so they survive the redirect back from Cognito
 - One CloudWatch log group per stack (`tacocat-gallery-auth/${Env}`) shared by every Lambda, plus one for API Gateway access logs (`tacocat-gallery-auth/${Env}/api-access`), so retention is set as code
 
 ## Code Style
@@ -127,7 +130,9 @@ Pass one plain object with a snake_case `event` field plus whatever context is r
 
 ## Testing
 
-Unit tests live next to the code as `*.test.ts`. Test event payloads in `events/` directory for local Lambda invocation testing.
+Unit tests live next to the code as `*.test.ts`. `src/jest.setup.ts` supplies the environment variables `env.ts` demands at import, so handler modules can be imported directly; `src/testing/` holds shared test builders. Test event payloads in `events/` directory for local Lambda invocation testing.
+
+Integration tests in `src/test/integration/` make logged-out HTTPS requests to a deployed API and need no credentials. CI runs them against staging right after each deploy there; run them by hand with `npm run test:integration`, or against another deployment with `AUTH_API_URL=https://auth.pix.tacocat.com npm run test:integration`. They cannot run against a pull request, which only gets a dry-run changeset.
 
 ## CI/CD
 

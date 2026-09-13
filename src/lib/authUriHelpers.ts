@@ -22,15 +22,18 @@ export function getGalleryAppBaseUrl(): string {
 }
 
 /**
- * URL of the Cognito-hosted login page
- * @see https://docs.aws.amazon.com/cognito/latest/developerguide/login-endpoint.html
+ * URL that starts an authorization code flow on Cognito's managed login.
+ * @see https://docs.aws.amazon.com/cognito/latest/developerguide/authorization-endpoint.html
  */
-export function getLoginUrl(): string {
-    const url = new URL('/login', COGNITO_BASE_URI);
+export function getLoginUrl(params: { state: string; codeChallenge: string }): string {
+    const url = new URL('/oauth2/authorize', COGNITO_BASE_URI);
     url.searchParams.set('response_type', 'code');
     url.searchParams.set('client_id', COGNITO_CLIENT_ID);
     url.searchParams.set('redirect_uri', getLoginCallbackUrl());
     url.searchParams.set('scope', 'email openid phone');
+    url.searchParams.set('state', params.state);
+    url.searchParams.set('code_challenge', params.codeChallenge);
+    url.searchParams.set('code_challenge_method', 'S256');
     return url.toString();
 }
 

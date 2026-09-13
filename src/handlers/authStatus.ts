@@ -9,13 +9,25 @@ import { CognitoJwtVerifier } from 'aws-jwt-verify';
 import type { CognitoJwtPayload } from 'aws-jwt-verify/jwt-model';
 import { getCookie } from '../lib/cookies';
 import { getTokensFromCognito } from '../lib/authTokens';
+import {
+    ID_TOKEN_COOKIE,
+    REFRESH_TOKEN_COOKIE,
+    idTokenCookie,
+    idTokenExpiry,
+    refreshTokenCookie,
+    wasAuthenticatedCookie,
+} from '../lib/authCookies';
 import { COGNITO_POOL_ID, COGNITO_CLIENT_ID, GALLERY_APP_DOMAIN } from '../lib/env';
 
-export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-    if (event.httpMethod !== 'GET') {
-        throw new Error(`I only accept GET method, but instead I got: ${event.httpMethod}`);
-    }
+// Module scope so the verifier's JWKS cache outlives the request: a verifier
+// built per request would fetch Cognito's signing keys on every call.
+const jwtVerifier = CognitoJwtVerifier.create({
+    userPoolId: COGNITO_POOL_ID,
+    tokenUse: 'id',
+    clientId: COGNITO_CLIENT_ID,
+});
 
+export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     // The response we'll be returning
     const response: APIGatewayProxyResult = {
         statusCode: 200,
@@ -39,7 +51,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const cookies = event.headers.cookie ?? '';
 
     // Get the short-lived Cognito user ID token from cookie
-    const rawIdToken = getCookie(cookies, 'id_token');
+    const rawIdToken = getCookie(cookies, ID_TOKEN_COOKIE);
 
     // If ID token exists, try to validate it
     if (rawIdToken) {
@@ -50,24 +62,26 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     // If we don't have a valid user yet (no id_token, or id_token was invalid/expired),
     // try to use the refresh token to get a new id_token
     if (!user) {
-        const refreshToken = getCookie(cookies, 'refresh_token');
+        const refreshToken = getCookie(cookies, REFRESH_TOKEN_COOKIE);
 
         if (refreshToken) {
             console.info({ event: 'token_refresh_attempt' });
             try {
                 const updatedTokens = await getTokensFromCognito({ refreshToken: refreshToken });
 
-                console.info({ event: 'token_refresh_success' });
+                console.info({ event: 'token_refresh_success', rotated: !!updatedTokens.refresh_token });
 
-                // Update the cookie for the id token
-                const idExpires = new Date();
-                idExpires.setSeconds(idExpires.getSeconds() + updatedTokens.expires_in);
-                response.multiValueHeaders = {
-                    'Set-Cookie': [
-                        `id_token=${updatedTokens.id_token}; HttpOnly; Secure; Domain=tacocat.com; SameSite=Strict; Path=/; Expires=${idExpires.toUTCString()}`,
-                        `was_authenticated=Authenticated at ${Date.now()}; Secure; Domain=tacocat.com; SameSite=Strict; Path=/; Expires=${idExpires.toUTCString()}`,
-                    ],
-                };
+                const idExpires = idTokenExpiry(updatedTokens.expires_in);
+                const setCookies = [
+                    idTokenCookie(updatedTokens.id_token, idExpires),
+                    wasAuthenticatedCookie(idExpires),
+                ];
+                // With refresh token rotation on, Cognito revokes the token just
+                // used and hands back a new one: keep it or the next refresh fails.
+                if (updatedTokens.refresh_token) {
+                    setCookies.push(refreshTokenCookie(updatedTokens.refresh_token));
+                }
+                response.multiValueHeaders = { 'Set-Cookie': setCookies };
 
                 // Get user out of new ID token
                 const idToken = await verifyToken(updatedTokens.id_token);
@@ -100,19 +114,13 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 };
 
 async function verifyToken(token: string): Promise<CognitoJwtPayload | undefined> {
-    const jwtVerifier = CognitoJwtVerifier.create({
-        userPoolId: COGNITO_POOL_ID,
-        tokenUse: 'id',
-        clientId: COGNITO_CLIENT_ID,
-    });
-    let payload;
     try {
-        payload = await jwtVerifier.verify(token);
+        return await jwtVerifier.verify(token);
     } catch (error) {
         console.info({
             event: 'token_validation_failed',
             error: error instanceof Error ? error.message : String(error),
         });
+        return undefined;
     }
-    return payload;
 }
