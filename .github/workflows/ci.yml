@@ -61,7 +61,7 @@ jobs:
               run: echo "$GITHUB_WORKSPACE/node_modules/.bin" >> "$GITHUB_PATH"
 
             - name: Setup AWS SAM CLI
-              uses: aws-actions/setup-sam@v3
+              uses: aws-actions/setup-sam@89ddb14d60e682855e3fea4be85b3c56485de310 # v3
               with:
                   use-installer: true
 
@@ -71,7 +71,7 @@ jobs:
             - name: Configure AWS credentials
               # No stored keys: the job trades its GitHub OIDC token for a short-lived AWS role.
               # Roles are defined in infra/github-oidc.yaml.
-              uses: aws-actions/configure-aws-credentials@v6
+              uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c # v6.2.4
               with:
                   role-to-assume: arn:aws:iam::010410881828:role/tacocat-gallery-auth-cicd-github-main
                   role-session-name: github-${{ github.run_id }}
