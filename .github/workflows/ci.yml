@@ -3,18 +3,8 @@ name: CI
 on:
     push:
         branches: [main]
-        paths-ignore:
-            - '*.md'
-            - 'LICENSE'
-            - '.gitignore'
-            - 'docs/**'
     pull_request:
         branches: [main]
-        paths-ignore:
-            - '*.md'
-            - 'LICENSE'
-            - '.gitignore'
-            - 'docs/**'
 
 concurrency:
     group: ${{ github.workflow }}-${{ github.ref }}
@@ -27,11 +17,66 @@ env:
     HUSKY: 0 # Skip git hooks in CI
 
 jobs:
+    # Detect if production code changed (vs non-code stuff like docs). A path
+    # filter on the workflow trigger can't do this: a skipped workflow leaves
+    # the required status check pending forever, blocking docs-only PRs.
+    detect-code-changes:
+        runs-on: ubuntu-latest
+        permissions:
+            pull-requests: read
+        outputs:
+            code_changed: ${{ steps.filter.outputs.code }}
+        steps:
+            - uses: actions/checkout@v7
+              with:
+                  fetch-depth: 0 # Required for paths-filter to compare commits on push
+            - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+              id: filter
+              with:
+                  predicate-quantifier: 'every'
+                  # Keep in step with what lint-docs.yml covers
+                  filters: |
+                      code:
+                        - '**'
+                        - '!**/*.md'
+                        - '!.markdownlint.json'
+                        - '!.markdownlint-cli2.jsonc'
+                        - '!LICENSE'
+                        - '!.gitignore'
+                        - '!docs/**'
+
+    # Only runs if code files changed
     build-and-validate:
+        needs: detect-code-changes
+        if: ${{ needs.detect-code-changes.outputs.code_changed == 'true' }}
         uses: ./.github/workflows/build-and-validate.yml
         permissions:
             contents: read
             id-token: write # a called workflow can hold at most the permissions the caller grants
+
+    # Branch protection requires this job, not build-and-validate, to pass before merging
+    # Passes if: (1) no code changes (skip is OK), or (2) build-and-validate succeeded
+    # Fails if: code changes and build-and-validate failed/cancelled
+    merge-ok:
+        needs: [detect-code-changes, build-and-validate]
+        if: always()
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check required jobs
+              run: |
+                  if [[ "${{ needs.detect-code-changes.result }}" != "success" ]]; then
+                      echo "✗ detect-code-changes failed (result: ${{ needs.detect-code-changes.result }})"
+                      exit 1
+                  fi
+                  if [[ "${{ needs.detect-code-changes.outputs.code_changed }}" != "true" ]]; then
+                      echo "✓ No code changes - build was skipped appropriately"
+                      exit 0
+                  fi
+                  if [[ "${{ needs.build-and-validate.result }}" != "success" ]]; then
+                      echo "✗ Code changes detected but build did not succeed (result: ${{ needs.build-and-validate.result }})"
+                      exit 1
+                  fi
+                  echo "✓ Code changes detected and build passed"
 
     deploy:
         needs: build-and-validate

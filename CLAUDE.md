@@ -132,7 +132,7 @@ Unit tests live next to the code as `*.test.ts`. Test event payloads in `events/
 ## CI/CD
 
 - **gh CLI**: Use the `gh` CLI tool for GitHub operations.
-- **Branch protection**: The `main` branch is protected. All changes require a pull request.
+- **Branch protection**: The `main` branch is protected. All changes require a pull request. The required status check is the `merge-ok` job in `ci.yml`, which passes when the build succeeded or when only docs changed and the build was skipped.
 - **Pre-commit hooks**: Husky runs the same checks as CI (see `.husky/pre-commit`). Tools not installed locally are skipped with a warning; CI enforces them regardless.
 - **CI workflow**: On PR and push to main, runs all lint and test checks plus a SAM build and a dry-run changeset against dev (see `.github/workflows/`). On push to main, also deploys to staging.
 - **Production deploy**: Manual workflow dispatch from GitHub Actions. Runs the checks, waits for approval in the `prod` GitHub environment, deploys to prod, creates a release tag (YYYYvN format), and generates release notes.
