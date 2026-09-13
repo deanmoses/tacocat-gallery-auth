@@ -16,40 +16,6 @@
         {
             "type": "aws-sam",
             "request": "direct-invoke",
-            "name": "Run AuthStatusFunction Lambda Without Cookies",
-            "invokeTarget": {
-                "target": "template",
-                "templatePath": "${workspaceFolder}/template.yaml",
-                "logicalId": "AuthStatusFunction"
-            },
-            "lambda": {
-                "runtime": "nodejs24.x",
-                "payload": {
-                    "path": "${workspaceFolder}/events/auth-status-event-no-cookies.json"
-                },
-                "environmentVariables": {}
-            }
-        },
-        {
-            "type": "aws-sam",
-            "request": "direct-invoke",
-            "name": "Run AuthStatusFunction Lambda With Cookies",
-            "invokeTarget": {
-                "target": "template",
-                "templatePath": "${workspaceFolder}/template.yaml",
-                "logicalId": "AuthStatusFunction"
-            },
-            "lambda": {
-                "runtime": "nodejs24.x",
-                "payload": {
-                    "path": "${workspaceFolder}/events/auth-status-event-multiple-cookies.json"
-                },
-                "environmentVariables": {}
-            }
-        },
-        {
-            "type": "aws-sam",
-            "request": "direct-invoke",
             "name": "Run AuthStatusFunction via API",
             "invokeTarget": {
                 "target": "api",

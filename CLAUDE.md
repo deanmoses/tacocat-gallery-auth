@@ -130,7 +130,7 @@ Pass one plain object with a snake_case `event` field plus whatever context is r
 
 ## Testing
 
-Unit tests live next to the code as `*.test.ts`. `src/jest.setup.ts` supplies the environment variables `env.ts` demands at import, so handler modules can be imported directly; `src/testing/` holds shared test builders. Test event payloads in `events/` directory for local Lambda invocation testing.
+Unit tests live next to the code as `*.test.ts`. `src/jest.setup.ts` supplies the environment variables `env.ts` demands at import, so handler modules can be imported directly; `src/testing/` holds shared test builders.
 
 Integration tests in `src/test/integration/` make logged-out HTTPS requests to a deployed API and need no credentials. CI runs them against staging right after each deploy there; run them by hand with `npm run test:integration`, or against another deployment with `AUTH_API_URL=https://auth.pix.tacocat.com npm run test:integration`. They cannot run against a pull request, which only gets a dry-run changeset.
 

@@ -5,10 +5,6 @@ coverage/
 # Lockfile is npm's to format
 package-lock.json
 
-# Test fixtures are captured API Gateway payloads; keep them byte-identical to
-# what API Gateway actually emits.
-events/
-
 # Personal settings; ignored via global gitignore for some devs, so pin it here
 # to keep `format:check` consistent between local runs and CI.
 .claude/settings.local.json
