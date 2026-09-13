@@ -96,6 +96,7 @@ Globals:
         CognitoClientSecret: "{{resolve:secretsmanager:Tacocat/Gallery/Authentication:SecretString:TacocatGalleryCognitoClientSecret}}"
   Api:
     Name: !Sub Tacocat Gallery Auth API - ${Env}
+    OpenApiVersion: '3.0.1' # Stops SAM creating unused "Stage" stage
     Domain:
       DomainName: !Sub auth.${GalleryAppDomain}
       CertificateArn: !Ref DomainCertificateArn
