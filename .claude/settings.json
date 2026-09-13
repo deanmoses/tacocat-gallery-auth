@@ -2,6 +2,7 @@
     "permissions": {
         "allow": [
             "Bash(sam build:*)",
+            "Bash(npm run build)",
             "Bash(sam validate:*)",
             "Bash(npx jest:*)",
             "Bash(npm test:*)",
@@ -15,8 +16,7 @@
             "Skill(commit:*)",
             "Skill(pr)",
             "Skill(pr:*)"
-        ],
-        "additionalDirectories": ["./src"]
+        ]
     },
     "hooks": {
         "SessionStart": [

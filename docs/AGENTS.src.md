@@ -52,7 +52,7 @@ npm run lint:shell    # shellcheck on shell scripts (requires shellcheck)
 npm run lint:actions  # actionlint on GitHub workflows (requires actionlint)
 
 # Building and deploying
-sam build             # Build SAM application (see esbuild note below)
+npm run build         # sam build with the pinned esbuild on PATH (see esbuild note below)
 sam deploy --no-execute-changeset  # Creates a changeset in AWS without executing it (uploads artifacts, needs credentials)
 sam deploy            # Deploy to dev/staging
 npm run watch         # sam sync --watch: deploy to dev/staging and redeploy on every change
@@ -72,7 +72,7 @@ Logs are kept 90 days in prod and 30 in dev.
 
 ### esbuild
 
-`sam build` shells out to esbuild on the host. It is pinned as a devDependency, but SAM resolves `node_modules` relative to each `CodeUri`, so the pinned binary is found only via PATH -- a global esbuild (Homebrew, `npm i -g`) silently shadows it and builds with a different version. To use the pinned one:
+`sam build` shells out to esbuild on the host. It is pinned as a devDependency, but SAM resolves `node_modules` relative to each `CodeUri`, so the pinned binary is found only via PATH -- a global esbuild (Homebrew, `npm i -g`) silently shadows it and builds with a different version. `npm run build` (and `npm run watch`) put `node_modules/.bin` first on PATH, as every npm script does, so prefer them to running `sam build` directly. To build by hand:
 
 ```bash
 PATH="$PWD/node_modules/.bin:$PATH" sam build
