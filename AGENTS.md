@@ -53,6 +53,10 @@ Logs are kept 90 days in prod and 30 in dev.
 PATH="$PWD/node_modules/.bin:$PATH" sam build
 ```
 
+### Node.js
+
+Node 24 is pinned in `.nvmrc`, which CI and the session-start hook both read. Claude Code on the web runs `.claude/hooks/session-start.sh` before the session starts: it selects the pinned version through the image's nvm and installs dependencies. Without it the image's older npm installs anyway and rewrites `package-lock.json`.
+
 ## Architecture
 
 **Stack:** AWS SAM + Lambda (Node.js 24) + API Gateway + Cognito

@@ -38,7 +38,7 @@
         "lint:fix": "eslint . --fix",
         "lint:md": "markdownlint-cli2",
         "lint:cfn": "sam validate --lint && sam validate --lint --template infra/github-oidc.yaml && sam validate --lint --template infra/apigateway-logging.yaml",
-        "lint:shell": "shellcheck scripts/*.sh .husky/pre-commit",
+        "lint:shell": "shellcheck scripts/*.sh .claude/hooks/*.sh .husky/pre-commit",
         "lint:actions": "actionlint",
         "format": "prettier --write .",
         "format:check": "prettier --check .",
