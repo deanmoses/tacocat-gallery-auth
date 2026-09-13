@@ -24,8 +24,8 @@ jobs:
         needs: build-and-validate
         runs-on: ubuntu-latest
         timeout-minutes: 30
-        # The prod environment requires a reviewer's approval before this job starts and only
-        # runs from a protected branch. The prod AWS role trusts jobs in this environment alone.
+        # The prod environment only deploys from a protected branch, and the prod AWS role
+        # trusts jobs in this environment alone.
         environment:
             name: prod
             url: https://auth.pix.tacocat.com

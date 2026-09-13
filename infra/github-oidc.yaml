@@ -31,7 +31,7 @@ Description: >-
 #
 #   repo:ORG/REPO:pull_request          PR role    dry-run change set on dev
 #   repo:ORG/REPO:ref:refs/heads/main   main role  deploy dev
-#   repo:ORG/REPO:environment:prod      prod role  deploy prod (needs the environment's approval)
+#   repo:ORG/REPO:environment:prod      prod role  deploy prod (protected branches only)
 # -----------------------------------------------------------------------------
 
 Parameters:
@@ -246,7 +246,7 @@ Resources:
         Type: AWS::IAM::Role
         Properties:
             RoleName: tacocat-gallery-auth-cicd-github-prod
-            Description: Assumed by the production deploy job, which runs inside the GitHub environment that requires a reviewer's approval
+            Description: Assumed by the production deploy job, which runs inside the prod GitHub environment that only deploys from protected branches
             MaxSessionDuration: 3600
             AssumeRolePolicyDocument:
                 Version: '2012-10-17'
