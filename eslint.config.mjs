@@ -5,6 +5,7 @@ import { defineConfig } from 'eslint/config';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 import eslintConfigPrettier from 'eslint-config-prettier';
+import eslintPluginJest from 'eslint-plugin-jest';
 import eslintPluginPrettier from 'eslint-plugin-prettier/recommended';
 
 export default defineConfig(
@@ -57,6 +58,18 @@ export default defineConfig(
             '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
             '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
             '@typescript-eslint/switch-exhaustiveness-check': 'error',
+        },
+    },
+    {
+        files: ['**/*.test.ts'],
+        extends: [eslintPluginJest.configs['flat/recommended'], eslintPluginJest.configs['flat/style']],
+        rules: {
+            // The Jest variant allows passing a mocked method to expect(), which is
+            // how mock calls are asserted
+            '@typescript-eslint/unbound-method': 'off',
+            'jest/unbound-method': 'error',
+            'jest/no-conditional-in-test': 'error',
+            'jest/require-to-throw-message': 'error',
         },
     },
 );
