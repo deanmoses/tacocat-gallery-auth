@@ -16,6 +16,14 @@ The role ARNs are stable, so the workflows and `samconfig.toml` reference them d
 
 Workflow jobs gets their short-lived credential by presenting their OIDC token, and which role it may assume is decided by the token's `sub` claim: pull requests, runs on `main`, or the `prod` GitHub environment. The `prod` environment is configured in the repository settings to deploy only from protected branches.
 
+## Claude Code on the web
+
+The same template gives a cloud session what it needs in this project: deploy the dev stack, and read every environment's log groups. That is the reach the `main` CI role has, plus the logs no CI job needs. Prod logs are included, because an incident is when you most want them and reading a log changes nothing. Deploying to prod is out of reach under an explicit `Deny`.
+
+A session authenticates as one IAM user for the whole account, `tacocat-gallery-claude-code-cloud`, and that user is created by the [tacocat-gallery-sam](https://github.com/deanmoses/tacocat-gallery-sam) repo's `infra/`. **That stack has to be deployed before this one**, or the policy here has no user to attach to and the deploy fails. What the user may do in this project is still decided here: this template attaches its own managed policy, so the permissions live with the project rather than accumulating in another repo's template. The other Tacocat repos do the same.
+
+One thing to watch when adding another repo to that arrangement: AWS allows ten managed policies per IAM user by default. This template attaches two of them.
+
 ## API Gateway logging role
 
 [apigateway-logging.yaml](apigateway-logging.yaml) registers the CloudWatch role API Gateway uses to write the access logs `template.yaml` enables. The role is an account setting, one per region, so it is deployed once here rather than by each stack. Until it exists, deploying the app stacks fails with `CloudWatch Logs role ARN must be set in account settings to enable logging`.
