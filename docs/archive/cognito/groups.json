@@ -1,0 +1,11 @@
+{
+    "Groups": [
+        {
+            "GroupName": "Admins",
+            "UserPoolId": "us-east-1_DdPFtamLz",
+            "Description": "Tacocat gallery admins",
+            "LastModifiedDate": "2023-09-12T15:05:12.249000-07:00",
+            "CreationDate": "2023-09-12T15:05:12.249000-07:00"
+        }
+    ]
+}
