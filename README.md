@@ -1,5 +1,7 @@
 # tacocat-gallery-auth
 
+> **Archived.** This repo was the Cognito login for [pix.tacocat.com](https://pix.tacocat.com) on AWS from December 2023 to October 2026. On 2026-10-02 the gallery moved to Cloudflare and now lives in [tacocat-gallery-cloudflare](https://github.com/deanmoses/tacocat-gallery-cloudflare), where a passkey login replaces Cognito. Nothing here deploys any more; the stacks are out of service and being torn down. The last production release was `2026v5`; `main` is two commits past it that never shipped. The user pool was configured by hand in the console, so its settings are exported under [docs/archive/cognito](docs/archive/cognito/README.md) for the record.
+
 Authentication API for [Tacocat Gallery](https://pix.tacocat.com) using AWS Cognito.
 
 ## What it does

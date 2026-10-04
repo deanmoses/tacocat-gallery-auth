@@ -1,0 +1,16 @@
+{
+    "DomainDescription": {
+        "UserPoolId": "us-east-1_DdPFtamLz",
+        "AWSAccountId": "010410881828",
+        "Domain": "login.tacocat.com",
+        "S3Bucket": "aws-cognito-prod-iad-assets",
+        "CloudFrontDistribution": "d1be9xhgy7sojj.cloudfront.net",
+        "Version": "20231201065615",
+        "Status": "ACTIVE",
+        "CustomDomainConfig": {
+            "CertificateArn": "arn:aws:acm:us-east-1:010410881828:certificate/63bf45b0-921f-4186-ad0b-5390935185b7",
+            "SecurityPolicy": "TLS_V1"
+        },
+        "ManagedLoginVersion": 1
+    }
+}
